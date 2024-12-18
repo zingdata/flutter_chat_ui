@@ -24,6 +24,7 @@ class Chat extends StatefulWidget {
   final OnAttachmentTapCallback? onAttachmentTap;
   final double? chatListTopPadding;
   final double? chatListBottomPadding;
+  final EdgeInsets? chatListPadding;
 
   const Chat({
     super.key,
@@ -40,6 +41,7 @@ class Chat extends StatefulWidget {
     this.onAttachmentTap,
     this.chatListTopPadding,
     this.chatListBottomPadding,
+    this.chatListPadding,
   });
 
   @override
@@ -115,17 +117,20 @@ class _ChatState extends State<Chat> with WidgetsBindingObserver {
         color: _theme.backgroundColor,
         child: Stack(
           children: [
-            _builders.chatAnimatedListBuilder?.call(
-                  context,
-                  _scrollController,
-                  _buildItem,
-                ) ??
-                ChatAnimatedList(
-                  scrollController: _scrollController,
-                  itemBuilder: _buildItem,
-                  topPadding: widget.chatListTopPadding,
-                  bottomPadding: widget.chatListBottomPadding,
-                ),
+            Padding(
+              padding: widget.chatListPadding ?? EdgeInsets.zero,
+              child: _builders.chatAnimatedListBuilder?.call(
+                    context,
+                    _scrollController,
+                    _buildItem,
+                  ) ??
+                  ChatAnimatedList(
+                    scrollController: _scrollController,
+                    itemBuilder: _buildItem,
+                    topPadding: widget.chatListTopPadding,
+                    bottomPadding: widget.chatListBottomPadding,
+                  ),
+            ),
             _builders.inputBuilder?.call(context) ?? const ChatInput(),
           ],
         ),
