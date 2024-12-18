@@ -22,6 +22,8 @@ class Chat extends StatefulWidget {
   final OnMessageSendCallback? onMessageSend;
   final OnMessageTapCallback? onMessageTap;
   final OnAttachmentTapCallback? onAttachmentTap;
+  final double? chatListTopPadding;
+  final double? chatListBottomPadding;
 
   const Chat({
     super.key,
@@ -36,6 +38,8 @@ class Chat extends StatefulWidget {
     this.onMessageSend,
     this.onMessageTap,
     this.onAttachmentTap,
+    this.chatListTopPadding,
+    this.chatListBottomPadding,
   });
 
   @override
@@ -69,8 +73,7 @@ class _ChatState extends State<Chat> with WidgetsBindingObserver {
   void didUpdateWidget(covariant Chat oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.theme != widget.theme ||
-        oldWidget.darkTheme != widget.darkTheme) {
+    if (oldWidget.theme != widget.theme || oldWidget.darkTheme != widget.darkTheme) {
       _updateTheme(theme: _theme, darkTheme: _theme);
     }
 
@@ -120,6 +123,8 @@ class _ChatState extends State<Chat> with WidgetsBindingObserver {
                 ChatAnimatedList(
                   scrollController: _scrollController,
                   itemBuilder: _buildItem,
+                  topPadding: widget.chatListTopPadding,
+                  bottomPadding: widget.chatListBottomPadding,
                 ),
             _builders.inputBuilder?.call(context) ?? const ChatInput(),
           ],
@@ -151,10 +156,9 @@ class _ChatState extends State<Chat> with WidgetsBindingObserver {
         _theme = (darkTheme ?? ChatTheme.dark()).merge(widget.darkTheme);
         break;
       case ThemeMode.system:
-        _theme =
-            PlatformDispatcher.instance.platformBrightness == Brightness.dark
-                ? (darkTheme ?? ChatTheme.dark()).merge(widget.darkTheme)
-                : (theme ?? ChatTheme.light()).merge(widget.theme);
+        _theme = PlatformDispatcher.instance.platformBrightness == Brightness.dark
+            ? (darkTheme ?? ChatTheme.dark()).merge(widget.darkTheme)
+            : (theme ?? ChatTheme.light()).merge(widget.theme);
         break;
     }
   }
