@@ -102,7 +102,7 @@ class _ChatInputState extends State<ChatInput> {
                         hintStyle: inputTheme.hintStyle,
                         border: widget.inputBorder,
                         filled: widget.filled,
-                        fillColor: inputTheme.textFieldColor,
+                     //   fillColor: inputTheme.textFieldColor,
                         hoverColor: Colors.transparent,
                       ),
                       style: inputTheme.textStyle,
