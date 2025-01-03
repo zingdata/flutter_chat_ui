@@ -8,14 +8,16 @@ import '../simple_text_message.dart';
 import 'chat_message.dart';
 
 class ChatMessageInternal extends StatefulWidget {
-  final Animation<double> animation;
   final Message message;
+  final int index;
+  final Animation<double> animation;
   final bool? isRemoved;
 
   const ChatMessageInternal({
     super.key,
-    required this.animation,
     required this.message,
+    required this.index,
+    required this.animation,
     this.isRemoved,
   });
 
@@ -49,7 +51,7 @@ class ChatMessageInternalState extends State<ChatMessageInternal> {
               event.message != null,
               'Message must be provided when updating a message.',
             );
-            if (_updatedMessage == event.oldMessage) {
+            if (_updatedMessage.id == event.oldMessage!.id) {
               setState(() {
                 _updatedMessage = event.message!;
               });
@@ -63,24 +65,32 @@ class ChatMessageInternalState extends State<ChatMessageInternal> {
 
   @override
   void dispose() {
-    super.dispose();
     _operationsSubscription?.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final builders = context.watch<Builders>();
-    final child = _buildMessage(context, builders, _updatedMessage);
+    final child = _buildMessage(
+      context,
+      builders,
+      _updatedMessage,
+      widget.index,
+    );
 
     return builders.chatMessageBuilder?.call(
           context,
           _updatedMessage,
+          widget.index,
           widget.animation,
           child,
         ) ??
         ChatMessage(
           message: _updatedMessage,
+          index: widget.index,
           animation: widget.animation,
+          isRemoved: widget.isRemoved,
           child: child,
         );
   }
@@ -89,14 +99,16 @@ class ChatMessageInternalState extends State<ChatMessageInternal> {
     BuildContext context,
     Builders builders,
     Message message,
+    int index,
   ) {
     switch (message) {
       case TextMessage():
-        return builders.textMessageBuilder?.call(context, message) ??
-            SimpleTextMessage(message: message);
+        return builders.textMessageBuilder?.call(context, message, index) ??
+            SimpleTextMessage(message: message, index: index);
       case ImageMessage():
-        final result = builders.imageMessageBuilder?.call(context, message) ??
-            const SizedBox.shrink();
+        final result =
+            builders.imageMessageBuilder?.call(context, message, index) ??
+                const SizedBox.shrink();
         assert(
           !(result is SizedBox && result.width == 0 && result.height == 0),
           'You are trying to display an image message but you have not provided an imageMessageBuilder. '
@@ -104,11 +116,12 @@ class ChatMessageInternalState extends State<ChatMessageInternal> {
           'If you want to use default image message widget, install flyer_chat_image_message package and use FlyerChatImageMessage widget.',
         );
         return result;
-    //   case CustomMessage():
-    //     return builders.customMessageBuilder?.call(context, message) ??
-    //         const SizedBox.shrink();
+      case CustomMessage():
+        return builders.customMessageBuilder?.call(context, message, index) ??
+            const SizedBox.shrink();
       case UnsupportedMessage():
-        return builders.unsupportedMessageBuilder?.call(context, message) ??
+        return builders.unsupportedMessageBuilder
+                ?.call(context, message, index) ??
             const Text(
               'This message is not supported. Please update your app.',
             );

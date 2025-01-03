@@ -13,14 +13,18 @@ import 'get_image_dimensions.dart';
 
 class FlyerChatImageMessage extends StatefulWidget {
   final ImageMessage message;
+  final int index;
   final BorderRadiusGeometry? borderRadius;
   final BoxConstraints? constraints;
+  final Widget? overlay;
 
   const FlyerChatImageMessage({
     super.key,
     required this.message,
+    required this.index,
     this.borderRadius = const BorderRadius.all(Radius.circular(12)),
     this.constraints = const BoxConstraints(maxHeight: 300),
+    this.overlay,
   });
 
   @override
@@ -149,15 +153,26 @@ class FlyerChatImageMessageState extends State<FlyerChatImageMessage>
                   );
                 },
                 frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                  var content = child;
+
+                  if (widget.overlay != null &&
+                      widget.message.overlay == true &&
+                      frame != null) {
+                    content = Stack(
+                      fit: StackFit.expand,
+                      children: [child, widget.overlay!],
+                    );
+                  }
+
                   if (wasSynchronouslyLoaded) {
-                    return child;
+                    return content;
                   }
 
                   return AnimatedOpacity(
-                    duration: const Duration(milliseconds: 300),
+                    duration: const Duration(milliseconds: 250),
                     opacity: frame == null ? 0 : 1,
-                    curve: Curves.fastOutSlowIn,
-                    child: child,
+                    curve: Curves.linearToEaseOut,
+                    child: content,
                   );
                 },
               ),

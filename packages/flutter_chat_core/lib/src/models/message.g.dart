@@ -17,6 +17,7 @@ _$TextMessageImpl _$$TextMessageImplFromJson(Map<String, dynamic> json) =>
       linkPreview: json['linkPreview'] == null
           ? null
           : LinkPreview.fromJson(json['linkPreview'] as Map<String, dynamic>),
+      isOnlyEmoji: json['isOnlyEmoji'] as bool?,
       $type: json['type'] as String?,
     );
 
@@ -36,6 +37,7 @@ Map<String, dynamic> _$$TextMessageImplToJson(_$TextMessageImpl instance) {
   writeNotNull('metadata', instance.metadata);
   val['text'] = instance.text;
   writeNotNull('linkPreview', instance.linkPreview?.toJson());
+  writeNotNull('isOnlyEmoji', instance.isOnlyEmoji);
   val['type'] = instance.$type;
   return val;
 }
@@ -52,6 +54,7 @@ _$ImageMessageImpl _$$ImageMessageImplFromJson(Map<String, dynamic> json) =>
       blurhash: json['blurhash'] as String?,
       width: (json['width'] as num?)?.toDouble(),
       height: (json['height'] as num?)?.toDouble(),
+      overlay: json['overlay'] as bool?,
       $type: json['type'] as String?,
     );
 
@@ -74,6 +77,7 @@ Map<String, dynamic> _$$ImageMessageImplToJson(_$ImageMessageImpl instance) {
   writeNotNull('blurhash', instance.blurhash);
   writeNotNull('width', instance.width);
   writeNotNull('height', instance.height);
+  writeNotNull('overlay', instance.overlay);
   val['type'] = instance.$type;
   return val;
 }

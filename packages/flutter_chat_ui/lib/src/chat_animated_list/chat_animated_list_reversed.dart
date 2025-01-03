@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:provider/provider.dart';
+import 'package:scrollview_observer/scrollview_observer.dart';
 
 import '../utils/chat_input_height_notifier.dart';
 import '../utils/message_list_diff.dart';
@@ -20,6 +21,8 @@ class ChatAnimatedListReversed extends StatefulWidget {
   final double? bottomPadding;
   final Widget? topSliver;
   final Widget? bottomSliver;
+  final bool? handleSafeArea;
+  final ScrollViewKeyboardDismissBehavior? keyboardDismissBehavior;
 
   const ChatAnimatedListReversed({
     super.key,
@@ -28,10 +31,12 @@ class ChatAnimatedListReversed extends StatefulWidget {
     this.insertAnimationDuration = const Duration(milliseconds: 250),
     this.removeAnimationDuration = const Duration(milliseconds: 250),
     this.scrollToEndAnimationDuration = const Duration(milliseconds: 250),
-    this.topPadding,
+    this.topPadding = 8,
     this.bottomPadding = 20,
     this.topSliver,
     this.bottomSliver,
+    this.handleSafeArea = true,
+    this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.onDrag,
   });
 
   @override
@@ -42,8 +47,12 @@ class ChatAnimatedListReversed extends StatefulWidget {
 class ChatAnimatedListReversedState extends State<ChatAnimatedListReversed> {
   final GlobalKey<SliverAnimatedListState> _listKey = GlobalKey();
   late final ChatController _chatController;
+  late final SliverObserverController _observerController;
   late List<Message> _oldList;
   late final StreamSubscription<ChatOperation> _operationsSubscription;
+
+  // Used by scrollview_observer to allow for scroll to specific item
+  BuildContext? _sliverListViewContext;
 
   bool _userHasScrolled = false;
 
@@ -51,6 +60,8 @@ class ChatAnimatedListReversedState extends State<ChatAnimatedListReversed> {
   void initState() {
     super.initState();
     _chatController = Provider.of<ChatController>(context, listen: false);
+    _observerController =
+        SliverObserverController(controller: widget.scrollController);
     // TODO: Add assert for messages having same id
     _oldList = List.from(_chatController.messages);
     _operationsSubscription = _chatController.operationsStream.listen((event) {
@@ -102,12 +113,14 @@ class ChatAnimatedListReversedState extends State<ChatAnimatedListReversed> {
 
   @override
   void dispose() {
-    super.dispose();
     _operationsSubscription.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final bottomSafeArea = MediaQuery.of(context).padding.bottom;
+
     return NotificationListener<Notification>(
       onNotification: (notification) {
         // Handle initial scroll to bottom so you see latest messages
@@ -131,43 +144,57 @@ class ChatAnimatedListReversedState extends State<ChatAnimatedListReversed> {
         // Allow other listeners to get the notification
         return false;
       },
-      child: CustomScrollView(
-        reverse: true,
-        controller: widget.scrollController,
-        slivers: <Widget>[
-          Consumer<ChatInputHeightNotifier>(
-            builder: (context, heightNotifier, child) {
-              return SliverPadding(
-                padding: EdgeInsets.only(
-                  bottom: heightNotifier.height + (widget.bottomPadding ?? 0),
-                ),
-              );
-            },
-          ),
-          if (widget.bottomSliver != null) widget.bottomSliver!,
-          SliverAnimatedList(
-            key: _listKey,
-            initialItemCount: _chatController.messages.length,
-            itemBuilder: (
-              BuildContext context,
-              int index,
-              Animation<double> animation,
-            ) {
-              final message = _chatController.messages[
-                  max(_chatController.messages.length - 1 - index, 0)];
-              return widget.itemBuilder(
-                context,
-                animation,
-                message,
-              );
-            },
-          ),
-          if (widget.topSliver != null) widget.topSliver!,
-          if (widget.topPadding != null)
-            SliverPadding(
-              padding: EdgeInsets.only(top: widget.topPadding!),
-            ),
+      child: SliverViewObserver(
+        controller: _observerController,
+        sliverContexts: () => [
+          if (_sliverListViewContext != null) _sliverListViewContext!,
         ],
+        child: CustomScrollView(
+          reverse: true,
+          controller: widget.scrollController,
+          keyboardDismissBehavior: widget.keyboardDismissBehavior ??
+              ScrollViewKeyboardDismissBehavior.manual,
+          slivers: <Widget>[
+            Consumer<ChatInputHeightNotifier>(
+              builder: (context, heightNotifier, child) {
+                return SliverPadding(
+                  padding: EdgeInsets.only(
+                    bottom: heightNotifier.height +
+                        (widget.bottomPadding ?? 0) +
+                        (widget.handleSafeArea == true ? bottomSafeArea : 0),
+                  ),
+                );
+              },
+            ),
+            if (widget.bottomSliver != null) widget.bottomSliver!,
+            SliverAnimatedList(
+              key: _listKey,
+              initialItemCount: _chatController.messages.length,
+              itemBuilder: (
+                BuildContext context,
+                int index,
+                Animation<double> animation,
+              ) {
+                _sliverListViewContext ??= context;
+                final currentIndex =
+                    max(_chatController.messages.length - 1 - index, 0);
+                final message = _chatController.messages[currentIndex];
+
+                return widget.itemBuilder(
+                  context,
+                  message,
+                  currentIndex,
+                  animation,
+                );
+              },
+            ),
+            if (widget.topSliver != null) widget.topSliver!,
+            if (widget.topPadding != null)
+              SliverPadding(
+                padding: EdgeInsets.only(top: widget.topPadding!),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -200,8 +227,9 @@ class ChatAnimatedListReversedState extends State<ChatAnimatedListReversed> {
       visualPosition,
       (context, animation) => widget.itemBuilder(
         context,
-        animation,
         data,
+        visualPosition,
+        animation,
         isRemoved: true,
       ),
       duration: widget.removeAnimationDuration,

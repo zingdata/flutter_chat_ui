@@ -43,7 +43,8 @@ mixin _$Message {
             @EpochDateTimeConverter() DateTime createdAt,
             Map<String, dynamic>? metadata,
             String text,
-            LinkPreview? linkPreview)
+            LinkPreview? linkPreview,
+            bool? isOnlyEmoji)
         text,
     required TResult Function(
             String id,
@@ -54,7 +55,8 @@ mixin _$Message {
             String? thumbhash,
             String? blurhash,
             double? width,
-            double? height)
+            double? height,
+            bool? overlay)
         image,
     required TResult Function(
             String id,
@@ -78,7 +80,8 @@ mixin _$Message {
             @EpochDateTimeConverter() DateTime createdAt,
             Map<String, dynamic>? metadata,
             String text,
-            LinkPreview? linkPreview)?
+            LinkPreview? linkPreview,
+            bool? isOnlyEmoji)?
         text,
     TResult? Function(
             String id,
@@ -89,7 +92,8 @@ mixin _$Message {
             String? thumbhash,
             String? blurhash,
             double? width,
-            double? height)?
+            double? height,
+            bool? overlay)?
         image,
     TResult? Function(
             String id,
@@ -113,7 +117,8 @@ mixin _$Message {
             @EpochDateTimeConverter() DateTime createdAt,
             Map<String, dynamic>? metadata,
             String text,
-            LinkPreview? linkPreview)?
+            LinkPreview? linkPreview,
+            bool? isOnlyEmoji)?
         text,
     TResult Function(
             String id,
@@ -124,7 +129,8 @@ mixin _$Message {
             String? thumbhash,
             String? blurhash,
             double? width,
-            double? height)?
+            double? height,
+            bool? overlay)?
         image,
     TResult Function(
             String id,
@@ -255,7 +261,8 @@ abstract class _$$TextMessageImplCopyWith<$Res>
       @EpochDateTimeConverter() DateTime createdAt,
       Map<String, dynamic>? metadata,
       String text,
-      LinkPreview? linkPreview});
+      LinkPreview? linkPreview,
+      bool? isOnlyEmoji});
 
   @override
   $UserCopyWith<$Res> get author;
@@ -281,6 +288,7 @@ class __$$TextMessageImplCopyWithImpl<$Res>
     Object? metadata = freezed,
     Object? text = null,
     Object? linkPreview = freezed,
+    Object? isOnlyEmoji = freezed,
   }) {
     return _then(_$TextMessageImpl(
       id: null == id
@@ -307,6 +315,10 @@ class __$$TextMessageImplCopyWithImpl<$Res>
           ? _value.linkPreview
           : linkPreview // ignore: cast_nullable_to_non_nullable
               as LinkPreview?,
+      isOnlyEmoji: freezed == isOnlyEmoji
+          ? _value.isOnlyEmoji
+          : isOnlyEmoji // ignore: cast_nullable_to_non_nullable
+              as bool?,
     ));
   }
 
@@ -335,6 +347,7 @@ class _$TextMessageImpl extends TextMessage {
       final Map<String, dynamic>? metadata,
       required this.text,
       this.linkPreview,
+      this.isOnlyEmoji,
       final String? $type})
       : _metadata = metadata,
         $type = $type ?? 'text',
@@ -364,13 +377,15 @@ class _$TextMessageImpl extends TextMessage {
   final String text;
   @override
   final LinkPreview? linkPreview;
+  @override
+  final bool? isOnlyEmoji;
 
   @JsonKey(name: 'type')
   final String $type;
 
   @override
   String toString() {
-    return 'Message.text(id: $id, author: $author, createdAt: $createdAt, metadata: $metadata, text: $text, linkPreview: $linkPreview)';
+    return 'Message.text(id: $id, author: $author, createdAt: $createdAt, metadata: $metadata, text: $text, linkPreview: $linkPreview, isOnlyEmoji: $isOnlyEmoji)';
   }
 
   @override
@@ -385,13 +400,22 @@ class _$TextMessageImpl extends TextMessage {
             const DeepCollectionEquality().equals(other._metadata, _metadata) &&
             (identical(other.text, text) || other.text == text) &&
             (identical(other.linkPreview, linkPreview) ||
-                other.linkPreview == linkPreview));
+                other.linkPreview == linkPreview) &&
+            (identical(other.isOnlyEmoji, isOnlyEmoji) ||
+                other.isOnlyEmoji == isOnlyEmoji));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, author, createdAt,
-      const DeepCollectionEquality().hash(_metadata), text, linkPreview);
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      author,
+      createdAt,
+      const DeepCollectionEquality().hash(_metadata),
+      text,
+      linkPreview,
+      isOnlyEmoji);
 
   /// Create a copy of Message
   /// with the given fields replaced by the non-null parameter values.
@@ -410,7 +434,8 @@ class _$TextMessageImpl extends TextMessage {
             @EpochDateTimeConverter() DateTime createdAt,
             Map<String, dynamic>? metadata,
             String text,
-            LinkPreview? linkPreview)
+            LinkPreview? linkPreview,
+            bool? isOnlyEmoji)
         text,
     required TResult Function(
             String id,
@@ -421,7 +446,8 @@ class _$TextMessageImpl extends TextMessage {
             String? thumbhash,
             String? blurhash,
             double? width,
-            double? height)
+            double? height,
+            bool? overlay)
         image,
     required TResult Function(
             String id,
@@ -436,7 +462,8 @@ class _$TextMessageImpl extends TextMessage {
             Map<String, dynamic>? metadata)
         unsupported,
   }) {
-    return text(id, author, createdAt, metadata, this.text, linkPreview);
+    return text(
+        id, author, createdAt, metadata, this.text, linkPreview, isOnlyEmoji);
   }
 
   @override
@@ -448,7 +475,8 @@ class _$TextMessageImpl extends TextMessage {
             @EpochDateTimeConverter() DateTime createdAt,
             Map<String, dynamic>? metadata,
             String text,
-            LinkPreview? linkPreview)?
+            LinkPreview? linkPreview,
+            bool? isOnlyEmoji)?
         text,
     TResult? Function(
             String id,
@@ -459,7 +487,8 @@ class _$TextMessageImpl extends TextMessage {
             String? thumbhash,
             String? blurhash,
             double? width,
-            double? height)?
+            double? height,
+            bool? overlay)?
         image,
     TResult? Function(
             String id,
@@ -474,7 +503,8 @@ class _$TextMessageImpl extends TextMessage {
             Map<String, dynamic>? metadata)?
         unsupported,
   }) {
-    return text?.call(id, author, createdAt, metadata, this.text, linkPreview);
+    return text?.call(
+        id, author, createdAt, metadata, this.text, linkPreview, isOnlyEmoji);
   }
 
   @override
@@ -486,7 +516,8 @@ class _$TextMessageImpl extends TextMessage {
             @EpochDateTimeConverter() DateTime createdAt,
             Map<String, dynamic>? metadata,
             String text,
-            LinkPreview? linkPreview)?
+            LinkPreview? linkPreview,
+            bool? isOnlyEmoji)?
         text,
     TResult Function(
             String id,
@@ -497,7 +528,8 @@ class _$TextMessageImpl extends TextMessage {
             String? thumbhash,
             String? blurhash,
             double? width,
-            double? height)?
+            double? height,
+            bool? overlay)?
         image,
     TResult Function(
             String id,
@@ -514,7 +546,8 @@ class _$TextMessageImpl extends TextMessage {
     required TResult orElse(),
   }) {
     if (text != null) {
-      return text(id, author, createdAt, metadata, this.text, linkPreview);
+      return text(
+          id, author, createdAt, metadata, this.text, linkPreview, isOnlyEmoji);
     }
     return orElse();
   }
@@ -571,7 +604,8 @@ abstract class TextMessage extends Message {
       @EpochDateTimeConverter() required final DateTime createdAt,
       final Map<String, dynamic>? metadata,
       required final String text,
-      final LinkPreview? linkPreview}) = _$TextMessageImpl;
+      final LinkPreview? linkPreview,
+      final bool? isOnlyEmoji}) = _$TextMessageImpl;
   const TextMessage._() : super._();
 
   factory TextMessage.fromJson(Map<String, dynamic> json) =
@@ -588,6 +622,7 @@ abstract class TextMessage extends Message {
   Map<String, dynamic>? get metadata;
   String get text;
   LinkPreview? get linkPreview;
+  bool? get isOnlyEmoji;
 
   /// Create a copy of Message
   /// with the given fields replaced by the non-null parameter values.
@@ -614,7 +649,8 @@ abstract class _$$ImageMessageImplCopyWith<$Res>
       String? thumbhash,
       String? blurhash,
       double? width,
-      double? height});
+      double? height,
+      bool? overlay});
 
   @override
   $UserCopyWith<$Res> get author;
@@ -642,6 +678,7 @@ class __$$ImageMessageImplCopyWithImpl<$Res>
     Object? blurhash = freezed,
     Object? width = freezed,
     Object? height = freezed,
+    Object? overlay = freezed,
   }) {
     return _then(_$ImageMessageImpl(
       id: null == id
@@ -680,6 +717,10 @@ class __$$ImageMessageImplCopyWithImpl<$Res>
           ? _value.height
           : height // ignore: cast_nullable_to_non_nullable
               as double?,
+      overlay: freezed == overlay
+          ? _value.overlay
+          : overlay // ignore: cast_nullable_to_non_nullable
+              as bool?,
     ));
   }
 }
@@ -697,6 +738,7 @@ class _$ImageMessageImpl extends ImageMessage {
       this.blurhash,
       this.width,
       this.height,
+      this.overlay,
       final String? $type})
       : _metadata = metadata,
         $type = $type ?? 'image',
@@ -732,13 +774,15 @@ class _$ImageMessageImpl extends ImageMessage {
   final double? width;
   @override
   final double? height;
+  @override
+  final bool? overlay;
 
   @JsonKey(name: 'type')
   final String $type;
 
   @override
   String toString() {
-    return 'Message.image(id: $id, author: $author, createdAt: $createdAt, metadata: $metadata, source: $source, thumbhash: $thumbhash, blurhash: $blurhash, width: $width, height: $height)';
+    return 'Message.image(id: $id, author: $author, createdAt: $createdAt, metadata: $metadata, source: $source, thumbhash: $thumbhash, blurhash: $blurhash, width: $width, height: $height, overlay: $overlay)';
   }
 
   @override
@@ -757,7 +801,8 @@ class _$ImageMessageImpl extends ImageMessage {
             (identical(other.blurhash, blurhash) ||
                 other.blurhash == blurhash) &&
             (identical(other.width, width) || other.width == width) &&
-            (identical(other.height, height) || other.height == height));
+            (identical(other.height, height) || other.height == height) &&
+            (identical(other.overlay, overlay) || other.overlay == overlay));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -772,7 +817,8 @@ class _$ImageMessageImpl extends ImageMessage {
       thumbhash,
       blurhash,
       width,
-      height);
+      height,
+      overlay);
 
   /// Create a copy of Message
   /// with the given fields replaced by the non-null parameter values.
@@ -791,7 +837,8 @@ class _$ImageMessageImpl extends ImageMessage {
             @EpochDateTimeConverter() DateTime createdAt,
             Map<String, dynamic>? metadata,
             String text,
-            LinkPreview? linkPreview)
+            LinkPreview? linkPreview,
+            bool? isOnlyEmoji)
         text,
     required TResult Function(
             String id,
@@ -802,7 +849,8 @@ class _$ImageMessageImpl extends ImageMessage {
             String? thumbhash,
             String? blurhash,
             double? width,
-            double? height)
+            double? height,
+            bool? overlay)
         image,
     required TResult Function(
             String id,
@@ -818,7 +866,7 @@ class _$ImageMessageImpl extends ImageMessage {
         unsupported,
   }) {
     return image(id, author, createdAt, metadata, source, thumbhash, blurhash,
-        width, height);
+        width, height, overlay);
   }
 
   @override
@@ -830,7 +878,8 @@ class _$ImageMessageImpl extends ImageMessage {
             @EpochDateTimeConverter() DateTime createdAt,
             Map<String, dynamic>? metadata,
             String text,
-            LinkPreview? linkPreview)?
+            LinkPreview? linkPreview,
+            bool? isOnlyEmoji)?
         text,
     TResult? Function(
             String id,
@@ -841,7 +890,8 @@ class _$ImageMessageImpl extends ImageMessage {
             String? thumbhash,
             String? blurhash,
             double? width,
-            double? height)?
+            double? height,
+            bool? overlay)?
         image,
     TResult? Function(
             String id,
@@ -857,7 +907,7 @@ class _$ImageMessageImpl extends ImageMessage {
         unsupported,
   }) {
     return image?.call(id, author, createdAt, metadata, source, thumbhash,
-        blurhash, width, height);
+        blurhash, width, height, overlay);
   }
 
   @override
@@ -869,7 +919,8 @@ class _$ImageMessageImpl extends ImageMessage {
             @EpochDateTimeConverter() DateTime createdAt,
             Map<String, dynamic>? metadata,
             String text,
-            LinkPreview? linkPreview)?
+            LinkPreview? linkPreview,
+            bool? isOnlyEmoji)?
         text,
     TResult Function(
             String id,
@@ -880,7 +931,8 @@ class _$ImageMessageImpl extends ImageMessage {
             String? thumbhash,
             String? blurhash,
             double? width,
-            double? height)?
+            double? height,
+            bool? overlay)?
         image,
     TResult Function(
             String id,
@@ -898,7 +950,7 @@ class _$ImageMessageImpl extends ImageMessage {
   }) {
     if (image != null) {
       return image(id, author, createdAt, metadata, source, thumbhash, blurhash,
-          width, height);
+          width, height, overlay);
     }
     return orElse();
   }
@@ -958,7 +1010,8 @@ abstract class ImageMessage extends Message {
       final String? thumbhash,
       final String? blurhash,
       final double? width,
-      final double? height}) = _$ImageMessageImpl;
+      final double? height,
+      final bool? overlay}) = _$ImageMessageImpl;
   const ImageMessage._() : super._();
 
   factory ImageMessage.fromJson(Map<String, dynamic> json) =
@@ -978,6 +1031,7 @@ abstract class ImageMessage extends Message {
   String? get blurhash;
   double? get width;
   double? get height;
+  bool? get overlay;
 
   /// Create a copy of Message
   /// with the given fields replaced by the non-null parameter values.
@@ -1119,7 +1173,8 @@ class _$CustomMessageImpl extends CustomMessage {
             @EpochDateTimeConverter() DateTime createdAt,
             Map<String, dynamic>? metadata,
             String text,
-            LinkPreview? linkPreview)
+            LinkPreview? linkPreview,
+            bool? isOnlyEmoji)
         text,
     required TResult Function(
             String id,
@@ -1130,7 +1185,8 @@ class _$CustomMessageImpl extends CustomMessage {
             String? thumbhash,
             String? blurhash,
             double? width,
-            double? height)
+            double? height,
+            bool? overlay)
         image,
     required TResult Function(
             String id,
@@ -1157,7 +1213,8 @@ class _$CustomMessageImpl extends CustomMessage {
             @EpochDateTimeConverter() DateTime createdAt,
             Map<String, dynamic>? metadata,
             String text,
-            LinkPreview? linkPreview)?
+            LinkPreview? linkPreview,
+            bool? isOnlyEmoji)?
         text,
     TResult? Function(
             String id,
@@ -1168,7 +1225,8 @@ class _$CustomMessageImpl extends CustomMessage {
             String? thumbhash,
             String? blurhash,
             double? width,
-            double? height)?
+            double? height,
+            bool? overlay)?
         image,
     TResult? Function(
             String id,
@@ -1195,7 +1253,8 @@ class _$CustomMessageImpl extends CustomMessage {
             @EpochDateTimeConverter() DateTime createdAt,
             Map<String, dynamic>? metadata,
             String text,
-            LinkPreview? linkPreview)?
+            LinkPreview? linkPreview,
+            bool? isOnlyEmoji)?
         text,
     TResult Function(
             String id,
@@ -1206,7 +1265,8 @@ class _$CustomMessageImpl extends CustomMessage {
             String? thumbhash,
             String? blurhash,
             double? width,
-            double? height)?
+            double? height,
+            bool? overlay)?
         image,
     TResult Function(
             String id,
@@ -1435,7 +1495,8 @@ class _$UnsupportedMessageImpl extends UnsupportedMessage {
             @EpochDateTimeConverter() DateTime createdAt,
             Map<String, dynamic>? metadata,
             String text,
-            LinkPreview? linkPreview)
+            LinkPreview? linkPreview,
+            bool? isOnlyEmoji)
         text,
     required TResult Function(
             String id,
@@ -1446,7 +1507,8 @@ class _$UnsupportedMessageImpl extends UnsupportedMessage {
             String? thumbhash,
             String? blurhash,
             double? width,
-            double? height)
+            double? height,
+            bool? overlay)
         image,
     required TResult Function(
             String id,
@@ -1473,7 +1535,8 @@ class _$UnsupportedMessageImpl extends UnsupportedMessage {
             @EpochDateTimeConverter() DateTime createdAt,
             Map<String, dynamic>? metadata,
             String text,
-            LinkPreview? linkPreview)?
+            LinkPreview? linkPreview,
+            bool? isOnlyEmoji)?
         text,
     TResult? Function(
             String id,
@@ -1484,7 +1547,8 @@ class _$UnsupportedMessageImpl extends UnsupportedMessage {
             String? thumbhash,
             String? blurhash,
             double? width,
-            double? height)?
+            double? height,
+            bool? overlay)?
         image,
     TResult? Function(
             String id,
@@ -1511,7 +1575,8 @@ class _$UnsupportedMessageImpl extends UnsupportedMessage {
             @EpochDateTimeConverter() DateTime createdAt,
             Map<String, dynamic>? metadata,
             String text,
-            LinkPreview? linkPreview)?
+            LinkPreview? linkPreview,
+            bool? isOnlyEmoji)?
         text,
     TResult Function(
             String id,
@@ -1522,7 +1587,8 @@ class _$UnsupportedMessageImpl extends UnsupportedMessage {
             String? thumbhash,
             String? blurhash,
             double? width,
-            double? height)?
+            double? height,
+            bool? overlay)?
         image,
     TResult Function(
             String id,

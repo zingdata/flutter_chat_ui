@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
 import 'create_message.dart';
+import 'widgets/input_action_bar.dart';
 
 class Local extends StatefulWidget {
   final User author;
@@ -27,19 +28,39 @@ class LocalState extends State<Local> {
 
   @override
   void dispose() {
-    super.dispose();
     _chatController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Local'),
+      ),
       body: Chat(
         builders: Builders(
-          textMessageBuilder: (context, message) =>
-              FlyerChatTextMessage(message: message),
-          imageMessageBuilder: (context, message) =>
-              FlyerChatImageMessage(message: message),
+          textMessageBuilder: (context, message, index) =>
+              FlyerChatTextMessage(message: message, index: index),
+          imageMessageBuilder: (context, message, index) =>
+              FlyerChatImageMessage(message: message, index: index),
+          inputBuilder: (context) => ChatInput(
+            topWidget: InputActionBar(
+              buttons: [
+                InputActionButton(
+                  icon: Icons.shuffle,
+                  title: 'Send random',
+                  onPressed: () => _addItem(null),
+                ),
+                InputActionButton(
+                  icon: Icons.delete_sweep,
+                  title: 'Clear all',
+                  onPressed: () => _chatController.set([]),
+                  destructive: true,
+                ),
+              ],
+            ),
+          ),
         ),
         chatController: _chatController,
         user: widget.author,
@@ -47,26 +68,6 @@ class LocalState extends State<Local> {
         onMessageTap: _removeItem,
         onAttachmentTap: _handleAttachmentTap,
       ),
-      persistentFooterButtons: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          child: const Text('Go back'),
-        ),
-        TextButton(
-          onPressed: () {
-            _addItem(null);
-          },
-          child: const Text('Send random'),
-        ),
-        TextButton(
-          onPressed: () {
-            _chatController.set([]);
-          },
-          child: const Text('Clear all messages'),
-        ),
-      ],
     );
   }
 

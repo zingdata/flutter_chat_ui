@@ -16,6 +16,7 @@ sealed class Message with _$Message {
     Map<String, dynamic>? metadata,
     required String text,
     LinkPreview? linkPreview,
+    bool? isOnlyEmoji,
   }) = TextMessage;
 
   const factory Message.image({
@@ -28,6 +29,7 @@ sealed class Message with _$Message {
     String? blurhash,
     double? width,
     double? height,
+    bool? overlay,
   }) = ImageMessage;
 
   const factory Message.custom({

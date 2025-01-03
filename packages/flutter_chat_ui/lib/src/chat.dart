@@ -86,17 +86,17 @@ class _ChatState extends State<Chat> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    super.dispose();
     WidgetsBinding.instance.removeObserver(this);
     // Only try to dispose cross cache if it's not provided, since
     // users might want to keep downloading media even after the chat
     // is disposed.
-    if (widget.crossCache == null) {
-      _crossCache.dispose();
-    }
     if (widget.scrollController == null) {
       _scrollController.dispose();
     }
+    if (widget.crossCache == null) {
+      _crossCache.dispose();
+    }
+    super.dispose();
   }
 
   @override
@@ -140,14 +140,16 @@ class _ChatState extends State<Chat> with WidgetsBindingObserver {
 
   Widget _buildItem(
     BuildContext context,
-    Animation<double> animation,
-    Message message, {
+    Message message,
+    int index,
+    Animation<double> animation, {
     bool? isRemoved,
   }) {
     return ChatMessageInternal(
       key: ValueKey(message),
-      animation: animation,
       message: message,
+      index: index,
+      animation: animation,
       isRemoved: isRemoved,
     );
   }

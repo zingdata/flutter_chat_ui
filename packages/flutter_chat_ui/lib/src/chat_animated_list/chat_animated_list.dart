@@ -1,13 +1,16 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:diffutil_dart/diffutil.dart' as diffutil;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:provider/provider.dart';
+import 'package:scrollview_observer/scrollview_observer.dart';
 
 import '../scroll_to_bottom.dart';
 import '../utils/chat_input_height_notifier.dart';
+import '../utils/keyboard_mixin.dart';
 import '../utils/message_list_diff.dart';
 
 class ChatAnimatedList extends StatefulWidget {
@@ -21,6 +24,8 @@ class ChatAnimatedList extends StatefulWidget {
   final double? bottomPadding;
   final Widget? topSliver;
   final Widget? bottomSliver;
+  final bool? handleSafeArea;
+  final ScrollViewKeyboardDismissBehavior? keyboardDismissBehavior;
 
   const ChatAnimatedList({
     super.key,
@@ -30,12 +35,12 @@ class ChatAnimatedList extends StatefulWidget {
     this.removeAnimationDuration = const Duration(milliseconds: 250),
     this.scrollToEndAnimationDuration = const Duration(milliseconds: 250),
     this.scrollToBottomAppearanceDelay = const Duration(milliseconds: 250),
-    // default vertical padding between messages are 1, so we add 7 to make it 8
-    // for the first message
-    this.topPadding = 7,
+    this.topPadding = 8,
     this.bottomPadding = 20,
     this.topSliver,
     this.bottomSliver,
+    this.handleSafeArea = true,
+    this.keyboardDismissBehavior = ScrollViewKeyboardDismissBehavior.onDrag,
   });
 
   @override
@@ -43,11 +48,15 @@ class ChatAnimatedList extends StatefulWidget {
 }
 
 class ChatAnimatedListState extends State<ChatAnimatedList>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver, KeyboardMixin {
   final GlobalKey<SliverAnimatedListState> _listKey = GlobalKey();
   late final ChatController _chatController;
+  late final SliverObserverController _observerController;
   late List<Message> _oldList;
   late final StreamSubscription<ChatOperation> _operationsSubscription;
+
+  // Used by scrollview_observer to allow for scroll to specific item
+  BuildContext? _sliverListViewContext;
 
   late final AnimationController _scrollToBottomController;
   late final Animation<double> _scrollToBottomAnimation;
@@ -64,6 +73,8 @@ class ChatAnimatedListState extends State<ChatAnimatedList>
   void initState() {
     super.initState();
     _chatController = Provider.of<ChatController>(context, listen: false);
+    _observerController =
+        SliverObserverController(controller: widget.scrollController);
     // TODO: Add assert for messages having same id
     _oldList = List.from(_chatController.messages);
     _operationsSubscription = _chatController.operationsStream.listen((event) {
@@ -114,24 +125,50 @@ class ChatAnimatedListState extends State<ChatAnimatedList>
 
     _scrollToBottomController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 250),
     );
     _scrollToBottomAnimation = CurvedAnimation(
       parent: _scrollToBottomController,
-      curve: Curves.easeInOut,
+      curve: Curves.linearToEaseOut,
     );
+  }
+
+  @override
+  void onKeyboardHeightChanged(double height) async {
+    if (mounted && widget.scrollController.hasClients) {
+      if (widget.scrollToEndAnimationDuration == Duration.zero) {
+        widget.scrollController.jumpTo(
+          min(
+            widget.scrollController.offset + height,
+            widget.scrollController.position.maxScrollExtent,
+          ),
+        );
+      } else {
+        await widget.scrollController.animateTo(
+          min(
+            widget.scrollController.offset + height,
+            widget.scrollController.position.maxScrollExtent,
+          ),
+          duration: widget.scrollToEndAnimationDuration,
+          curve: Curves.linearToEaseOut,
+        );
+      }
+      // we don't want to show the scroll to bottom button when automatically scrolling content with keyboard
+      _scrollToBottomShowTimer?.cancel();
+    }
   }
 
   @override
   void dispose() {
-    super.dispose();
     _scrollToBottomShowTimer?.cancel();
     _scrollToBottomController.dispose();
     _operationsSubscription.cancel();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final bottomSafeArea = MediaQuery.of(context).padding.bottom;
     final builders = context.watch<Builders>();
 
     return NotificationListener<Notification>(
@@ -164,42 +201,56 @@ class ChatAnimatedListState extends State<ChatAnimatedList>
       },
       child: Stack(
         children: [
-          CustomScrollView(
-            controller: widget.scrollController,
-            slivers: <Widget>[
-              if (widget.topPadding != null)
-                SliverPadding(
-                  padding: EdgeInsets.only(top: widget.topPadding!),
-                ),
-              if (widget.topSliver != null) widget.topSliver!,
-              SliverAnimatedList(
-                key: _listKey,
-                initialItemCount: _chatController.messages.length,
-                itemBuilder: (
-                  BuildContext context,
-                  int index,
-                  Animation<double> animation,
-                ) {
-                  final message = _chatController.messages[index];
-                  return widget.itemBuilder(
-                    context,
-                    animation,
-                    message,
-                  );
-                },
-              ),
-              if (widget.bottomSliver != null) widget.bottomSliver!,
-              Consumer<ChatInputHeightNotifier>(
-                builder: (context, heightNotifier, child) {
-                  return SliverPadding(
-                    padding: EdgeInsets.only(
-                      bottom:
-                          heightNotifier.height + (widget.bottomPadding ?? 0),
-                    ),
-                  );
-                },
-              ),
+          SliverViewObserver(
+            controller: _observerController,
+            sliverContexts: () => [
+              if (_sliverListViewContext != null) _sliverListViewContext!,
             ],
+            child: CustomScrollView(
+              controller: widget.scrollController,
+              keyboardDismissBehavior: widget.keyboardDismissBehavior ??
+                  ScrollViewKeyboardDismissBehavior.manual,
+              slivers: <Widget>[
+                if (widget.topPadding != null)
+                  SliverPadding(
+                    padding: EdgeInsets.only(top: widget.topPadding!),
+                  ),
+                if (widget.topSliver != null) widget.topSliver!,
+                SliverAnimatedList(
+                  key: _listKey,
+                  initialItemCount: _chatController.messages.length,
+                  itemBuilder: (
+                    BuildContext context,
+                    int index,
+                    Animation<double> animation,
+                  ) {
+                    _sliverListViewContext ??= context;
+                    final message = _chatController.messages[index];
+
+                    return widget.itemBuilder(
+                      context,
+                      message,
+                      index,
+                      animation,
+                    );
+                  },
+                ),
+                if (widget.bottomSliver != null) widget.bottomSliver!,
+                Consumer<ChatInputHeightNotifier>(
+                  builder: (context, heightNotifier, child) {
+                    return SliverPadding(
+                      padding: EdgeInsets.only(
+                        bottom: heightNotifier.height +
+                            (widget.bottomPadding ?? 0) +
+                            (widget.handleSafeArea == true
+                                ? bottomSafeArea
+                                : 0),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
           builders.scrollToBottomBuilder?.call(
                 context,
@@ -414,8 +465,9 @@ class ChatAnimatedListState extends State<ChatAnimatedList>
       position,
       (context, animation) => widget.itemBuilder(
         context,
-        animation,
         data,
+        position,
+        animation,
         isRemoved: true,
       ),
       duration: widget.removeAnimationDuration,

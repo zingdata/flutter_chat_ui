@@ -64,8 +64,8 @@ class _FlyerChatHomePageState extends State<FlyerChatHomePage> {
 
   @override
   void dispose() {
-    super.dispose();
     _dio.close(force: true);
+    super.dispose();
   }
 
   @override
@@ -177,7 +177,7 @@ class _FlyerChatHomePageState extends State<FlyerChatHomePage> {
                                 onPressed: () {
                                   Navigator.of(context).pop();
                                   getChatId(_dio).then((chatId) {
-                                    if (mounted && context.mounted) {
+                                    if (mounted) {
                                       _chatIdController.text = chatId;
                                     }
                                   });
