@@ -79,9 +79,9 @@ class _ChatState extends State<Chat> with WidgetsBindingObserver {
       _updateTheme(theme: _theme, darkTheme: _theme);
     }
 
-    // if (oldWidget.builders != widget.builders) {
-    //   _updateBuilders();
-    // }
+    if (oldWidget.builders != widget.builders) {
+      _updateBuilders();
+    }
   }
 
   @override
