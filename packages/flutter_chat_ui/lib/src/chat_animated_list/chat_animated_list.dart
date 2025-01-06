@@ -366,7 +366,7 @@ class ChatAnimatedListState extends State<ChatAnimatedList>
           }
 
           // jump until pixels == maxScrollExtent, i.e. end of the list
-          if (notification.metrics.pixels ==
+          if (notification.metrics.pixels <=
               notification.metrics.maxScrollExtent) {
             _needsInitialScrollPositionAdjustment = false;
           } else {
