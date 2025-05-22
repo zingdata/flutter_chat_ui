@@ -60,6 +60,14 @@ class Chat extends StatefulWidget {
   /// Defaults to 'HH:mm' (e.g., 14:30).
   final DateFormat? timeFormat;
 
+  /// The padding for the chat list.
+  final double topPadding;
+
+  /// The top padding for the chat list.
+  final double bottomPadding;
+
+  /// The bottom padding for the chat list.
+
   /// Creates the main chat widget.
   const Chat({
     super.key,
@@ -76,6 +84,8 @@ class Chat extends StatefulWidget {
     this.backgroundColor,
     this.decoration,
     this.timeFormat,
+    this.topPadding = 8,
+    this.bottomPadding = 20,
   });
 
   @override
@@ -143,15 +153,16 @@ class _ChatState extends State<Chat> with WidgetsBindingObserver {
         Provider(create: (_) => UserCache(maxSize: 100)),
       ],
       child: Container(
-        color:
-            widget.decoration != null
-                ? null
-                : (widget.backgroundColor ?? _theme.colors.surface),
+        color: widget.decoration != null ? null : (widget.backgroundColor ?? _theme.colors.surface),
         decoration: widget.decoration,
         child: Stack(
           children: [
             _builders.chatAnimatedListBuilder?.call(context, _buildItem) ??
-                ChatAnimatedList(itemBuilder: _buildItem),
+                ChatAnimatedList(
+                  itemBuilder: _buildItem,
+                  bottomPadding: widget.bottomPadding,
+                  topPadding: widget.topPadding,
+                ),
             _builders.composerBuilder?.call(context) ?? const Composer(),
           ],
         ),
