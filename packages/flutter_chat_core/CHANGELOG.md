@@ -1,3 +1,34 @@
+## 2.7.0
+
+ - **FEAT**: link preview package ([#790](https://github.com/flyerhq/flutter_chat_ui/issues/790)). ([2938f646](https://github.com/flyerhq/flutter_chat_ui/commit/2938f646f3167fb9ab65ca769f2326801db45c52))
+
+## 2.6.2
+
+ - **FIX**: update dependencies. ([a8ff8b57](https://github.com/flyerhq/flutter_chat_ui/commit/a8ff8b573a25146d5c78b1014c9caa3126d1de40))
+
+## 2.6.1
+
+ - **FIX**: add size attribute for ImageMessage ([#813](https://github.com/flyerhq/flutter_chat_ui/issues/813)). ([f50a3420](https://github.com/flyerhq/flutter_chat_ui/commit/f50a34200c6cc003331bd9d15f2aa5f9669671fe))
+
+## 2.6.0
+
+ - **FIX**: introduce status field back ([#809](https://github.com/flyerhq/flutter_chat_ui/issues/809)). ([1aadf874](https://github.com/flyerhq/flutter_chat_ui/commit/1aadf8747d81672422a0e40363b0c2aeaa9e3efd))
+ - **FEAT**: time and status grouping same minute fix [#764](https://github.com/flyerhq/flutter_chat_ui/issues/764) ([#792](https://github.com/flyerhq/flutter_chat_ui/issues/792)). ([61c04002](https://github.com/flyerhq/flutter_chat_ui/commit/61c04002153897113f47c239e059511b1e3468ec))
+
+## 2.5.0
+
+ - **FIX**: add editedAt and pinned [#797](https://github.com/flyerhq/flutter_chat_ui/issues/797) ([#798](https://github.com/flyerhq/flutter_chat_ui/issues/798)). ([e164caa3](https://github.com/flyerhq/flutter_chat_ui/commit/e164caa3de4a172f13f5810ffc32891e3e143c64))
+ - **FEAT**: expose isSentByMe and groupStatus in all messages builders ([#805](https://github.com/flyerhq/flutter_chat_ui/issues/805)). ([263d145b](https://github.com/flyerhq/flutter_chat_ui/commit/263d145bc3998d0f6ebed02406dda35634439b03))
+
+## 2.4.0
+
+ - **FIX**: expose user_cache and make it a changenotifier. ([baa7eee6](https://github.com/flyerhq/flutter_chat_ui/commit/baa7eee65201507eaf05574c8fcbd9afb9120d4a))
+ - **FEAT**: make messages required for set operation. ([9e123732](https://github.com/flyerhq/flutter_chat_ui/commit/9e1237321d0ee3781576d3486f695df8834de3b8))
+
+## 2.3.0
+
+ - **FEAT**: link preview v2 ([#784](https://github.com/flyerhq/flutter_chat_ui/issues/784)). ([b65060e1](https://github.com/flyerhq/flutter_chat_ui/commit/b65060e11036402934489976c702dab28c7feb80))
+
 ## 2.2.1
 
  - **FIX**: add emptyChatListWidget ([#771](https://github.com/flyerhq/flutter_chat_ui/issues/771)). ([69954654](https://github.com/flyerhq/flutter_chat_ui/commit/699546546ca4df7d4271316b52332364fde55ed8))

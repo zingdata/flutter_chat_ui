@@ -29,6 +29,11 @@ class FlyerChatImageMessage extends StatefulWidget {
   /// with the `message.source`.
   final ImageProvider? customImageProvider;
 
+  /// Optional HTTP headers for authenticated image requests.
+  /// Commonly used for authorization tokens, e.g., {'Authorization': 'Bearer token'}.
+  /// Only used when [customImageProvider] is null.
+  final Map<String, String>? headers;
+
   /// Border radius of the image container.
   final BorderRadiusGeometry? borderRadius;
 
@@ -69,12 +74,16 @@ class FlyerChatImageMessage extends StatefulWidget {
   /// Position of the timestamp and status indicator relative to the image.
   final TimeAndStatusPosition timeAndStatusPosition;
 
+  /// Error builder for the image widget.
+  final ImageErrorWidgetBuilder? errorBuilder;
+
   /// Creates a widget to display an image message.
   const FlyerChatImageMessage({
     super.key,
     required this.message,
     required this.index,
     this.customImageProvider,
+    this.headers,
     this.borderRadius,
     this.constraints = const BoxConstraints(maxHeight: 300),
     this.overlay,
@@ -88,6 +97,7 @@ class FlyerChatImageMessage extends StatefulWidget {
     this.showTime = true,
     this.showStatus = true,
     this.timeAndStatusPosition = TimeAndStatusPosition.end,
+    this.errorBuilder,
   });
 
   @override
@@ -155,7 +165,8 @@ class _FlyerChatImageMessageState extends State<FlyerChatImageMessage>
   @override
   void didUpdateWidget(covariant FlyerChatImageMessage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.message.source != widget.message.source) {
+    if (oldWidget.message.source != widget.message.source ||
+        oldWidget.headers != widget.headers) {
       final newImage = _targetProvider;
 
       precacheImage(newImage, context).then((_) {
@@ -176,21 +187,28 @@ class _FlyerChatImageMessageState extends State<FlyerChatImageMessage>
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.watch<ChatTheme>();
-    final isSentByMe = context.watch<UserID>() == widget.message.authorId;
+    final theme = context.select(
+      (ChatTheme t) => (
+        labelSmall: t.typography.labelSmall,
+        onSurface: t.colors.onSurface,
+        shape: t.shape,
+        surfaceContainerLow: t.colors.surfaceContainerLow,
+      ),
+    );
+    final isSentByMe = context.read<UserID>() == widget.message.authorId;
     final textDirection = Directionality.of(context);
     final timeAndStatus =
         widget.showTime || (isSentByMe && widget.showStatus)
             ? TimeAndStatus(
-              time: widget.message.time,
-              status: widget.message.status,
+              time: widget.message.resolvedTime,
+              status: widget.message.resolvedStatus,
               showTime: widget.showTime,
               showStatus: isSentByMe && widget.showStatus,
               backgroundColor:
                   widget.timeBackground ?? Colors.black.withValues(alpha: 0.6),
               textStyle:
                   widget.timeStyle ??
-                  theme.typography.labelSmall.copyWith(color: Colors.white),
+                  theme.labelSmall.copyWith(color: Colors.white),
             )
             : null;
 
@@ -206,9 +224,7 @@ class _FlyerChatImageMessageState extends State<FlyerChatImageMessage>
               _placeholderProvider != null
                   ? Image(image: _placeholderProvider!, fit: BoxFit.fill)
                   : Container(
-                    color:
-                        widget.placeholderColor ??
-                        theme.colors.surfaceContainerLow,
+                    color: widget.placeholderColor ?? theme.surfaceContainerLow,
                   ),
               Image(
                 image: _imageProvider,
@@ -221,12 +237,12 @@ class _FlyerChatImageMessageState extends State<FlyerChatImageMessage>
                   return Container(
                     color:
                         widget.loadingOverlayColor ??
-                        theme.colors.surfaceContainerLow.withValues(alpha: 0.5),
+                        theme.surfaceContainerLow.withValues(alpha: 0.5),
                     child: Center(
                       child: CircularProgressIndicator(
                         color:
                             widget.loadingIndicatorColor ??
-                            theme.colors.onSurface.withValues(alpha: 0.8),
+                            theme.onSurface.withValues(alpha: 0.8),
                         strokeCap: StrokeCap.round,
                         value:
                             loadingProgress.expectedTotalBytes != null
@@ -260,6 +276,7 @@ class _FlyerChatImageMessageState extends State<FlyerChatImageMessage>
                     child: content,
                   );
                 },
+                errorBuilder: widget.errorBuilder,
               ),
               if (_chatController is UploadProgressMixin)
                 StreamBuilder<double>(
@@ -273,14 +290,12 @@ class _FlyerChatImageMessageState extends State<FlyerChatImageMessage>
                     return Container(
                       color:
                           widget.uploadOverlayColor ??
-                          theme.colors.surfaceContainerLow.withValues(
-                            alpha: 0.5,
-                          ),
+                          theme.surfaceContainerLow.withValues(alpha: 0.5),
                       child: Center(
                         child: CircularProgressIndicator(
                           color:
                               widget.uploadIndicatorColor ??
-                              theme.colors.onSurface.withValues(alpha: 0.8),
+                              theme.onSurface.withValues(alpha: 0.8),
                           strokeCap: StrokeCap.round,
                           value: snapshot.data,
                         ),
@@ -318,7 +333,11 @@ class _FlyerChatImageMessageState extends State<FlyerChatImageMessage>
       return widget.customImageProvider!;
     } else {
       final crossCache = context.read<CrossCache>();
-      return CachedNetworkImage(widget.message.source, crossCache);
+      return CachedNetworkImage(
+        widget.message.source,
+        crossCache,
+        headers: widget.headers,
+      );
     }
   }
 }

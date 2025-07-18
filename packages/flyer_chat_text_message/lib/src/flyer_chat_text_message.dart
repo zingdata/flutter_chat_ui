@@ -3,6 +3,18 @@ import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
 import 'package:provider/provider.dart';
 
+/// Theme values for [FlyerChatTextMessage].
+typedef _LocalTheme =
+    ({
+      TextStyle bodyMedium,
+      TextStyle labelSmall,
+      Color onPrimary,
+      Color onSurface,
+      Color primary,
+      BorderRadiusGeometry shape,
+      Color surfaceContainer,
+    });
+
 /// A widget that displays a regular text message.
 ///
 /// Supports markdown rendering via [GptMarkdown].
@@ -19,6 +31,9 @@ class FlyerChatTextMessage extends StatelessWidget {
   /// Border radius of the message bubble.
   final BorderRadiusGeometry? borderRadius;
 
+  /// Box constraints for the message bubble.
+  final BoxConstraints? constraints;
+
   /// Font size for messages containing only emojis.
   final double? onlyEmojiFontSize;
 
@@ -34,6 +49,12 @@ class FlyerChatTextMessage extends StatelessWidget {
   /// Text style for messages received from other users.
   final TextStyle? receivedTextStyle;
 
+  /// The color of the links in the sent messages.
+  final Color? sentLinksColor;
+
+  /// The color of the links in the received messages.
+  final Color? receivedLinksColor;
+
   /// Text style for the message timestamp and status.
   final TextStyle? timeStyle;
 
@@ -46,8 +67,16 @@ class FlyerChatTextMessage extends StatelessWidget {
   /// Position of the timestamp and status indicator relative to the text.
   final TimeAndStatusPosition timeAndStatusPosition;
 
+  /// Insets for the timestamp and status indicator when [timeAndStatusPosition] is [TimeAndStatusPosition.inline].
+  final EdgeInsetsGeometry? timeAndStatusPositionInlineInsets;
+
   /// The callback function to handle link clicks.
-  final void Function(String url, String title)? onLinkTab;
+  final void Function(String url, String title)? onLinkTap;
+
+  /// The position of the link preview widget relative to the text.
+  /// If set to [LinkPreviewPosition.none], the link preview widget will not be displayed.
+  /// A [LinkPreviewBuilder] must be provided for the preview to be displayed.
+  final LinkPreviewPosition linkPreviewPosition;
 
   /// Creates a widget to display a text message.
   const FlyerChatTextMessage({
@@ -56,24 +85,39 @@ class FlyerChatTextMessage extends StatelessWidget {
     required this.index,
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
     this.borderRadius,
+    this.constraints,
     this.onlyEmojiFontSize = 48,
     this.sentBackgroundColor,
     this.receivedBackgroundColor,
     this.sentTextStyle,
     this.receivedTextStyle,
+    this.sentLinksColor,
+    this.receivedLinksColor,
     this.timeStyle,
     this.showTime = true,
     this.showStatus = true,
     this.timeAndStatusPosition = TimeAndStatusPosition.end,
-    this.onLinkTab,
+    this.timeAndStatusPositionInlineInsets = const EdgeInsets.only(bottom: 2),
+    this.onLinkTap,
+    this.linkPreviewPosition = LinkPreviewPosition.bottom,
   });
 
   bool get _isOnlyEmoji => message.metadata?['isOnlyEmoji'] == true;
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.watch<ChatTheme>();
-    final isSentByMe = context.watch<UserID>() == message.authorId;
+    final theme = context.select(
+      (ChatTheme t) => (
+        bodyMedium: t.typography.bodyMedium,
+        labelSmall: t.typography.labelSmall,
+        onPrimary: t.colors.onPrimary,
+        onSurface: t.colors.onSurface,
+        primary: t.colors.primary,
+        shape: t.shape,
+        surfaceContainer: t.colors.surfaceContainer,
+      ),
+    );
+    final isSentByMe = context.read<UserID>() == message.authorId;
     final backgroundColor = _resolveBackgroundColor(isSentByMe, theme);
     final paragraphStyle = _resolveParagraphStyle(isSentByMe, theme);
     final timeStyle = _resolveTimeStyle(isSentByMe, theme);
@@ -81,43 +125,65 @@ class FlyerChatTextMessage extends StatelessWidget {
     final timeAndStatus =
         showTime || (isSentByMe && showStatus)
             ? TimeAndStatus(
-              time: message.time,
-              status: message.status,
+              time: message.resolvedTime,
+              status: message.resolvedStatus,
               showTime: showTime,
               showStatus: isSentByMe && showStatus,
               textStyle: timeStyle,
             )
             : null;
 
-    final textContent = GptMarkdown(
-      message.text,
-      style:
-          _isOnlyEmoji
-              ? paragraphStyle?.copyWith(fontSize: onlyEmojiFontSize)
-              : paragraphStyle,
-      onLinkTab: onLinkTab,
+    final textContent = GptMarkdownTheme(
+      gptThemeData: GptMarkdownTheme.of(context).copyWith(
+        linkColor: isSentByMe ? sentLinksColor : receivedLinksColor,
+        linkHoverColor: isSentByMe ? sentLinksColor : receivedLinksColor,
+      ),
+      child: GptMarkdown(
+        message.text,
+        style:
+            _isOnlyEmoji
+                ? paragraphStyle?.copyWith(fontSize: onlyEmojiFontSize)
+                : paragraphStyle,
+        onLinkTap: onLinkTap,
+      ),
     );
 
-    return Container(
-      padding:
-          _isOnlyEmoji
-              ? EdgeInsets.symmetric(
-                horizontal: (padding?.horizontal ?? 0) / 2,
-                vertical: 0,
-              )
-              : padding,
-      decoration:
-          _isOnlyEmoji
-              ? null
-              : BoxDecoration(
-                color: backgroundColor,
-                borderRadius: borderRadius ?? theme.shape,
+    final linkPreviewWidget =
+        linkPreviewPosition != LinkPreviewPosition.none
+            ? context.read<Builders>().linkPreviewBuilder?.call(
+              context,
+              message,
+              isSentByMe,
+            )
+            : null;
+
+    return ClipRRect(
+      borderRadius: borderRadius ?? theme.shape,
+      child: Container(
+        constraints: constraints,
+        decoration: _isOnlyEmoji ? null : BoxDecoration(color: backgroundColor),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding:
+                  _isOnlyEmoji
+                      ? EdgeInsets.symmetric(
+                        horizontal: (padding?.horizontal ?? 0) / 2,
+                        vertical: 0,
+                      )
+                      : padding,
+              child: _buildContentBasedOnPosition(
+                context: context,
+                textContent: textContent,
+                timeAndStatus: timeAndStatus,
+                paragraphStyle: paragraphStyle,
+                linkPreviewWidget: linkPreviewWidget,
               ),
-      child: _buildContentBasedOnPosition(
-        context: context,
-        textContent: textContent,
-        timeAndStatus: timeAndStatus,
-        paragraphStyle: paragraphStyle,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -127,82 +193,83 @@ class FlyerChatTextMessage extends StatelessWidget {
     required Widget textContent,
     TimeAndStatus? timeAndStatus,
     TextStyle? paragraphStyle,
+    Widget? linkPreviewWidget,
   }) {
-    if (timeAndStatus == null) {
-      return textContent;
-    }
-
     final textDirection = Directionality.of(context);
+    final effectiveLinkPreviewPosition =
+        linkPreviewWidget != null
+            ? linkPreviewPosition
+            : LinkPreviewPosition.none;
 
-    switch (timeAndStatusPosition) {
-      case TimeAndStatusPosition.start:
-        return Column(
+    return Stack(
+      children: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [textContent, timeAndStatus],
-        );
-      case TimeAndStatusPosition.inline:
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Flexible(child: textContent),
-            const SizedBox(width: 4),
-            timeAndStatus,
+            if (effectiveLinkPreviewPosition == LinkPreviewPosition.top)
+              linkPreviewWidget!,
+            timeAndStatusPosition == TimeAndStatusPosition.inline
+                ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Flexible(child: textContent),
+                    SizedBox(width: 4),
+                    Padding(
+                      padding:
+                          timeAndStatusPositionInlineInsets ?? EdgeInsets.zero,
+                      child: timeAndStatus,
+                    ),
+                  ],
+                )
+                : textContent,
+            if (effectiveLinkPreviewPosition == LinkPreviewPosition.bottom)
+              linkPreviewWidget!,
+            if (timeAndStatusPosition != TimeAndStatusPosition.inline)
+              // Ensure the  width is not smaller than the timeAndStatus widget
+              // Ensure the height accounts for it's height
+              Opacity(opacity: 0, child: timeAndStatus),
           ],
-        );
-      case TimeAndStatusPosition.end:
-        return Stack(
-          children: [
-            Padding(
-              padding: EdgeInsets.only(bottom: paragraphStyle?.lineHeight ?? 0),
-              child: textContent,
-            ),
-            Opacity(opacity: 0, child: timeAndStatus),
-            Positioned.directional(
-              textDirection: textDirection,
-              end: 0,
-              bottom: 0,
-              child: timeAndStatus,
-            ),
-          ],
-        );
-    }
+        ),
+        if (timeAndStatusPosition != TimeAndStatusPosition.inline &&
+            timeAndStatus != null)
+          Positioned.directional(
+            textDirection: textDirection,
+            end: timeAndStatusPosition == TimeAndStatusPosition.end ? 0 : null,
+            start:
+                timeAndStatusPosition == TimeAndStatusPosition.start ? 0 : null,
+            bottom: 0,
+            child: timeAndStatus,
+          ),
+      ],
+    );
   }
 
-  Color? _resolveBackgroundColor(bool isSentByMe, ChatTheme theme) {
+  Color? _resolveBackgroundColor(bool isSentByMe, _LocalTheme theme) {
     if (isSentByMe) {
-      return sentBackgroundColor ?? theme.colors.primary;
+      return sentBackgroundColor ?? theme.primary;
     }
-    return receivedBackgroundColor ?? theme.colors.surfaceContainer;
+    return receivedBackgroundColor ?? theme.surfaceContainer;
   }
 
-  TextStyle? _resolveParagraphStyle(bool isSentByMe, ChatTheme theme) {
+  TextStyle? _resolveParagraphStyle(bool isSentByMe, _LocalTheme theme) {
     if (isSentByMe) {
-      return sentTextStyle ??
-          theme.typography.bodyMedium.copyWith(color: theme.colors.onPrimary);
+      return sentTextStyle ?? theme.bodyMedium.copyWith(color: theme.onPrimary);
     }
     return receivedTextStyle ??
-        theme.typography.bodyMedium.copyWith(color: theme.colors.onSurface);
+        theme.bodyMedium.copyWith(color: theme.onSurface);
   }
 
-  TextStyle? _resolveTimeStyle(bool isSentByMe, ChatTheme theme) {
+  TextStyle? _resolveTimeStyle(bool isSentByMe, _LocalTheme theme) {
     if (isSentByMe) {
       return timeStyle ??
-          theme.typography.labelSmall.copyWith(
-            color:
-                _isOnlyEmoji ? theme.colors.onSurface : theme.colors.onPrimary,
+          theme.labelSmall.copyWith(
+            color: _isOnlyEmoji ? theme.onSurface : theme.onPrimary,
           );
     }
-    return timeStyle ??
-        theme.typography.labelSmall.copyWith(color: theme.colors.onSurface);
+    return timeStyle ?? theme.labelSmall.copyWith(color: theme.onSurface);
   }
-}
-
-/// Internal extension for calculating the visual line height of a TextStyle.
-extension on TextStyle {
-  /// Calculates the line height based on the style's `height` and `fontSize`.
-  double get lineHeight => (height ?? 1) * (fontSize ?? 0);
 }
 
 /// A widget to display the message timestamp and status indicator.

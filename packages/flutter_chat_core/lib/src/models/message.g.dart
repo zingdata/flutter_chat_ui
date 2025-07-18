@@ -38,16 +38,24 @@ TextMessage _$TextMessageFromJson(Map<String, dynamic> json) => TextMessage(
     json['updatedAt'],
     const EpochDateTimeConverter().fromJson,
   ),
+  editedAt: _$JsonConverterFromJson<int, DateTime>(
+    json['editedAt'],
+    const EpochDateTimeConverter().fromJson,
+  ),
   reactions: (json['reactions'] as Map<String, dynamic>?)?.map(
     (k, e) =>
         MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
   ),
+  pinned: json['pinned'] as bool?,
   metadata: json['metadata'] as Map<String, dynamic>?,
+  status: $enumDecodeNullable(_$MessageStatusEnumMap, json['status']),
   text: json['text'] as String,
-  linkPreview:
-      json['linkPreview'] == null
+  linkPreviewData:
+      json['linkPreviewData'] == null
           ? null
-          : LinkPreview.fromJson(json['linkPreview'] as Map<String, dynamic>),
+          : LinkPreviewData.fromJson(
+            json['linkPreviewData'] as Map<String, dynamic>,
+          ),
   $type: json['type'] as String?,
 );
 
@@ -99,10 +107,20 @@ Map<String, dynamic> _$TextMessageToJson(
       )
       case final value?)
     'updatedAt': value,
+  if (_$JsonConverterToJson<int, DateTime>(
+        instance.editedAt,
+        const EpochDateTimeConverter().toJson,
+      )
+      case final value?)
+    'editedAt': value,
   if (instance.reactions case final value?) 'reactions': value,
+  if (instance.pinned case final value?) 'pinned': value,
   if (instance.metadata case final value?) 'metadata': value,
+  if (_$MessageStatusEnumMap[instance.status] case final value?)
+    'status': value,
   'text': instance.text,
-  if (instance.linkPreview?.toJson() case final value?) 'linkPreview': value,
+  if (instance.linkPreviewData?.toJson() case final value?)
+    'linkPreviewData': value,
   'type': instance.$type,
 };
 
@@ -110,6 +128,14 @@ Value? _$JsonConverterFromJson<Json, Value>(
   Object? json,
   Value? Function(Json json) fromJson,
 ) => json == null ? null : fromJson(json as Json);
+
+const _$MessageStatusEnumMap = {
+  MessageStatus.delivered: 'delivered',
+  MessageStatus.error: 'error',
+  MessageStatus.seen: 'seen',
+  MessageStatus.sending: 'sending',
+  MessageStatus.sent: 'sent',
+};
 
 Json? _$JsonConverterToJson<Json, Value>(
   Value? value,
@@ -153,7 +179,9 @@ TextStreamMessage _$TextStreamMessageFromJson(Map<String, dynamic> json) =>
         (k, e) =>
             MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
       ),
+      pinned: json['pinned'] as bool?,
       metadata: json['metadata'] as Map<String, dynamic>?,
+      status: $enumDecodeNullable(_$MessageStatusEnumMap, json['status']),
       streamId: json['streamId'] as String,
       $type: json['type'] as String?,
     );
@@ -207,7 +235,10 @@ Map<String, dynamic> _$TextStreamMessageToJson(
       case final value?)
     'updatedAt': value,
   if (instance.reactions case final value?) 'reactions': value,
+  if (instance.pinned case final value?) 'pinned': value,
   if (instance.metadata case final value?) 'metadata': value,
+  if (_$MessageStatusEnumMap[instance.status] case final value?)
+    'status': value,
   'streamId': instance.streamId,
   'type': instance.$type,
 };
@@ -248,13 +279,16 @@ ImageMessage _$ImageMessageFromJson(Map<String, dynamic> json) => ImageMessage(
     (k, e) =>
         MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
   ),
+  pinned: json['pinned'] as bool?,
   metadata: json['metadata'] as Map<String, dynamic>?,
+  status: $enumDecodeNullable(_$MessageStatusEnumMap, json['status']),
   source: json['source'] as String,
   text: json['text'] as String?,
   thumbhash: json['thumbhash'] as String?,
   blurhash: json['blurhash'] as String?,
   width: (json['width'] as num?)?.toDouble(),
   height: (json['height'] as num?)?.toDouble(),
+  size: (json['size'] as num?)?.toInt(),
   hasOverlay: json['hasOverlay'] as bool?,
   $type: json['type'] as String?,
 );
@@ -308,13 +342,17 @@ Map<String, dynamic> _$ImageMessageToJson(
       case final value?)
     'updatedAt': value,
   if (instance.reactions case final value?) 'reactions': value,
+  if (instance.pinned case final value?) 'pinned': value,
   if (instance.metadata case final value?) 'metadata': value,
+  if (_$MessageStatusEnumMap[instance.status] case final value?)
+    'status': value,
   'source': instance.source,
   if (instance.text case final value?) 'text': value,
   if (instance.thumbhash case final value?) 'thumbhash': value,
   if (instance.blurhash case final value?) 'blurhash': value,
   if (instance.width case final value?) 'width': value,
   if (instance.height case final value?) 'height': value,
+  if (instance.size case final value?) 'size': value,
   if (instance.hasOverlay case final value?) 'hasOverlay': value,
   'type': instance.$type,
 };
@@ -355,7 +393,9 @@ FileMessage _$FileMessageFromJson(Map<String, dynamic> json) => FileMessage(
     (k, e) =>
         MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
   ),
+  pinned: json['pinned'] as bool?,
   metadata: json['metadata'] as Map<String, dynamic>?,
+  status: $enumDecodeNullable(_$MessageStatusEnumMap, json['status']),
   source: json['source'] as String,
   name: json['name'] as String,
   size: (json['size'] as num?)?.toInt(),
@@ -412,7 +452,10 @@ Map<String, dynamic> _$FileMessageToJson(
       case final value?)
     'updatedAt': value,
   if (instance.reactions case final value?) 'reactions': value,
+  if (instance.pinned case final value?) 'pinned': value,
   if (instance.metadata case final value?) 'metadata': value,
+  if (_$MessageStatusEnumMap[instance.status] case final value?)
+    'status': value,
   'source': instance.source,
   'name': instance.name,
   if (instance.size case final value?) 'size': value,
@@ -456,7 +499,9 @@ VideoMessage _$VideoMessageFromJson(Map<String, dynamic> json) => VideoMessage(
     (k, e) =>
         MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
   ),
+  pinned: json['pinned'] as bool?,
   metadata: json['metadata'] as Map<String, dynamic>?,
+  status: $enumDecodeNullable(_$MessageStatusEnumMap, json['status']),
   source: json['source'] as String,
   text: json['text'] as String?,
   name: json['name'] as String?,
@@ -515,7 +560,10 @@ Map<String, dynamic> _$VideoMessageToJson(
       case final value?)
     'updatedAt': value,
   if (instance.reactions case final value?) 'reactions': value,
+  if (instance.pinned case final value?) 'pinned': value,
   if (instance.metadata case final value?) 'metadata': value,
+  if (_$MessageStatusEnumMap[instance.status] case final value?)
+    'status': value,
   'source': instance.source,
   if (instance.text case final value?) 'text': value,
   if (instance.name case final value?) 'name': value,
@@ -561,7 +609,9 @@ AudioMessage _$AudioMessageFromJson(Map<String, dynamic> json) => AudioMessage(
     (k, e) =>
         MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
   ),
+  pinned: json['pinned'] as bool?,
   metadata: json['metadata'] as Map<String, dynamic>?,
+  status: $enumDecodeNullable(_$MessageStatusEnumMap, json['status']),
   source: json['source'] as String,
   duration: const DurationConverter().fromJson(
     (json['duration'] as num).toInt(),
@@ -624,7 +674,10 @@ Map<String, dynamic> _$AudioMessageToJson(
       case final value?)
     'updatedAt': value,
   if (instance.reactions case final value?) 'reactions': value,
+  if (instance.pinned case final value?) 'pinned': value,
   if (instance.metadata case final value?) 'metadata': value,
+  if (_$MessageStatusEnumMap[instance.status] case final value?)
+    'status': value,
   'source': instance.source,
   'duration': const DurationConverter().toJson(instance.duration),
   if (instance.text case final value?) 'text': value,
@@ -670,7 +723,9 @@ SystemMessage _$SystemMessageFromJson(Map<String, dynamic> json) =>
         (k, e) =>
             MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
       ),
+      pinned: json['pinned'] as bool?,
       metadata: json['metadata'] as Map<String, dynamic>?,
+      status: $enumDecodeNullable(_$MessageStatusEnumMap, json['status']),
       text: json['text'] as String,
       $type: json['type'] as String?,
     );
@@ -724,7 +779,10 @@ Map<String, dynamic> _$SystemMessageToJson(
       case final value?)
     'updatedAt': value,
   if (instance.reactions case final value?) 'reactions': value,
+  if (instance.pinned case final value?) 'pinned': value,
   if (instance.metadata case final value?) 'metadata': value,
+  if (_$MessageStatusEnumMap[instance.status] case final value?)
+    'status': value,
   'text': instance.text,
   'type': instance.$type,
 };
@@ -766,7 +824,9 @@ CustomMessage _$CustomMessageFromJson(Map<String, dynamic> json) =>
         (k, e) =>
             MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
       ),
+      pinned: json['pinned'] as bool?,
       metadata: json['metadata'] as Map<String, dynamic>?,
+      status: $enumDecodeNullable(_$MessageStatusEnumMap, json['status']),
       $type: json['type'] as String?,
     );
 
@@ -819,7 +879,10 @@ Map<String, dynamic> _$CustomMessageToJson(
       case final value?)
     'updatedAt': value,
   if (instance.reactions case final value?) 'reactions': value,
+  if (instance.pinned case final value?) 'pinned': value,
   if (instance.metadata case final value?) 'metadata': value,
+  if (_$MessageStatusEnumMap[instance.status] case final value?)
+    'status': value,
   'type': instance.$type,
 };
 
@@ -860,7 +923,9 @@ UnsupportedMessage _$UnsupportedMessageFromJson(Map<String, dynamic> json) =>
         (k, e) =>
             MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
       ),
+      pinned: json['pinned'] as bool?,
       metadata: json['metadata'] as Map<String, dynamic>?,
+      status: $enumDecodeNullable(_$MessageStatusEnumMap, json['status']),
       $type: json['type'] as String?,
     );
 
@@ -913,6 +978,9 @@ Map<String, dynamic> _$UnsupportedMessageToJson(
       case final value?)
     'updatedAt': value,
   if (instance.reactions case final value?) 'reactions': value,
+  if (instance.pinned case final value?) 'pinned': value,
   if (instance.metadata case final value?) 'metadata': value,
+  if (_$MessageStatusEnumMap[instance.status] case final value?)
+    'status': value,
   'type': instance.$type,
 };

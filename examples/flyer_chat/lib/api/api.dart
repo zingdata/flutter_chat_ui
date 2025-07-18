@@ -87,39 +87,48 @@ class ApiState extends State<Api> {
           Chat(
             builders: Builders(
               textMessageBuilder:
-                  (context, message, index) =>
-                      FlyerChatTextMessage(message: message, index: index),
+                  (
+                    context,
+                    message,
+                    index, {
+                    required bool isSentByMe,
+                    MessageGroupStatus? groupStatus,
+                  }) => FlyerChatTextMessage(message: message, index: index),
               imageMessageBuilder:
-                  (context, message, index) =>
-                      FlyerChatImageMessage(message: message, index: index),
-              composerBuilder:
-                  (context) => Composer(
-                    topWidget: ComposerActionBar(
-                      buttons: [
-                        ComposerActionButton(
-                          icon: Icons.shuffle,
-                          title: 'Send random',
-                          onPressed: () => _addItem(null),
-                        ),
-                        ComposerActionButton(
-                          icon: Icons.delete_sweep,
-                          title: 'Clear all',
-                          onPressed: () async {
-                            try {
-                              await _apiService.flush();
-                              if (mounted) {
-                                await _chatController.setMessages([]);
-                                await _showInfo('All messages cleared');
-                              }
-                            } catch (error) {
-                              await _showInfo('Error: $error');
-                            }
-                          },
-                          destructive: true,
-                        ),
-                      ],
+                  (
+                    context,
+                    message,
+                    index, {
+                    required bool isSentByMe,
+                    MessageGroupStatus? groupStatus,
+                  }) => FlyerChatImageMessage(message: message, index: index),
+              composerBuilder: (context) => Composer(
+                topWidget: ComposerActionBar(
+                  buttons: [
+                    ComposerActionButton(
+                      icon: Icons.shuffle,
+                      title: 'Send random',
+                      onPressed: () => _addItem(null),
                     ),
-                  ),
+                    ComposerActionButton(
+                      icon: Icons.delete_sweep,
+                      title: 'Clear all',
+                      onPressed: () async {
+                        try {
+                          await _apiService.flush();
+                          if (mounted) {
+                            await _chatController.setMessages([]);
+                            await _showInfo('All messages cleared');
+                          }
+                        } catch (error) {
+                          await _showInfo('Error: $error');
+                        }
+                      },
+                      destructive: true,
+                    ),
+                  ],
+                ),
+              ),
             ),
             chatController: _chatController,
             crossCache: _crossCache,
@@ -280,7 +289,12 @@ class ApiState extends State<Api> {
     }
   }
 
-  void _removeItem(Message item, {int? index, TapUpDetails? details}) async {
+  void _removeItem(
+    BuildContext context,
+    Message item, {
+    int? index,
+    TapUpDetails? details,
+  }) async {
     await _chatController.removeMessage(item);
 
     try {

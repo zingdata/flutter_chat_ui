@@ -1,3 +1,56 @@
+## 2.7.0
+
+ - **FEAT**: link preview package ([#790](https://github.com/flyerhq/flutter_chat_ui/issues/790)). ([2938f646](https://github.com/flyerhq/flutter_chat_ui/commit/2938f646f3167fb9ab65ca769f2326801db45c52))
+
+## 2.6.2
+
+ - **FIX**: new loadingBuilder for stream message. ([38d539ac](https://github.com/flyerhq/flutter_chat_ui/commit/38d539ac7480392d223885a3378deee2b86b5966))
+
+## 2.6.1
+
+ - **FIX**: add sendButtonDisabled and sendButtonHidden [#828](https://github.com/flyerhq/flutter_chat_ui/issues/828). ([d476dd45](https://github.com/flyerhq/flutter_chat_ui/commit/d476dd4502df51148621577f9c66843cd3a067ab))
+
+## 2.6.0
+
+ - **FIX**: scrollToIndex does not work when starting with an empty list [#793](https://github.com/flyerhq/flutter_chat_ui/issues/793). ([1948c1f5](https://github.com/flyerhq/flutter_chat_ui/commit/1948c1f5c421d40ee8d276230eec295ca6b41d05))
+ - **FEAT**: add sendButtonVisibilityMode and allowEmptyMessage to the composer. ([7a496607](https://github.com/flyerhq/flutter_chat_ui/commit/7a496607966f0e976ccefdc80ac5b42e4bf59f8f))
+ - **FEAT**: add method OnMessageDoubleTapCallback; add param BuildContext context for OnMessageTapCallback and OnMessageLongPressCallback ([#817](https://github.com/flyerhq/flutter_chat_ui/issues/817)). ([6fe68886](https://github.com/flyerhq/flutter_chat_ui/commit/6fe688866c631a4976ec85e9adda210c58457d21))
+
+## 2.5.3
+
+ - **FIX**: update dependencies. ([a8ff8b57](https://github.com/flyerhq/flutter_chat_ui/commit/a8ff8b573a25146d5c78b1014c9caa3126d1de40))
+
+## 2.5.2
+
+ - Update a dependency to the latest release.
+
+## 2.5.1
+
+ - **FIX**: re-enable composer blur. ([791f7308](https://github.com/flyerhq/flutter_chat_ui/commit/791f7308cb499e854a6f59dc95a19ca9de7ef88d))
+
+## 2.5.0
+
+ - **FIX**: introduce status field back ([#809](https://github.com/flyerhq/flutter_chat_ui/issues/809)). ([1aadf874](https://github.com/flyerhq/flutter_chat_ui/commit/1aadf8747d81672422a0e40363b0c2aeaa9e3efd))
+ - **FIX**: prevent sending blank messages ([#808](https://github.com/flyerhq/flutter_chat_ui/issues/808)). ([6fbcfc73](https://github.com/flyerhq/flutter_chat_ui/commit/6fbcfc73645ec5f704fb1add52f0862bc19bc129))
+ - **FIX**: perf improvements ([#807](https://github.com/flyerhq/flutter_chat_ui/issues/807)). ([71e6d690](https://github.com/flyerhq/flutter_chat_ui/commit/71e6d69027d520c351b00c5e85e30cd97dabd321))
+ - **FIX**: allow to set a different color in Composer when not empty ([#794](https://github.com/flyerhq/flutter_chat_ui/issues/794)). ([788ca0c6](https://github.com/flyerhq/flutter_chat_ui/commit/788ca0c6ce470b10d70ef8965b49150e7e8570f9))
+ - **FEAT**: time and status grouping same minute fix [#764](https://github.com/flyerhq/flutter_chat_ui/issues/764) ([#792](https://github.com/flyerhq/flutter_chat_ui/issues/792)). ([61c04002](https://github.com/flyerhq/flutter_chat_ui/commit/61c04002153897113f47c239e059511b1e3468ec))
+
+## 2.4.0
+
+ - **FEAT**: expose isSentByMe and groupStatus in all messages builders ([#805](https://github.com/flyerhq/flutter_chat_ui/issues/805)). ([263d145b](https://github.com/flyerhq/flutter_chat_ui/commit/263d145bc3998d0f6ebed02406dda35634439b03))
+
+## 2.3.1
+
+ - **FIX**: add username widget. ([892ee622](https://github.com/flyerhq/flutter_chat_ui/commit/892ee6220273431ef90f51ce305c06dcca6944f7))
+ - **FIX**: expose user_cache and make it a changenotifier. ([baa7eee6](https://github.com/flyerhq/flutter_chat_ui/commit/baa7eee65201507eaf05574c8fcbd9afb9120d4a))
+ - **FIX**: expose headers for avatar and image message. ([0261ce1c](https://github.com/flyerhq/flutter_chat_ui/commit/0261ce1cbace258836f90c83d7d1348fc6253ab5))
+ - **FIX**: gemini example with option to stop a stream. ([fa558e46](https://github.com/flyerhq/flutter_chat_ui/commit/fa558e4631708dd590468f8a0ea4cf2dcb1e68fc))
+
+## 2.3.0
+
+ - **FEAT**: link preview v2 ([#784](https://github.com/flyerhq/flutter_chat_ui/issues/784)). ([b65060e1](https://github.com/flyerhq/flutter_chat_ui/commit/b65060e11036402934489976c702dab28c7feb80))
+
 ## 2.2.4
 
  - **FIX**: add physics param to the ChatAnimatedList(Reversed). ([ede3a170](https://github.com/flyerhq/flutter_chat_ui/commit/ede3a1709ea3d496e906925efa863a13b54d84bc))

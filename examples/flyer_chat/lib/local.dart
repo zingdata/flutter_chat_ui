@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+import 'package:flutter_link_previewer/flutter_link_previewer.dart';
 import 'package:flyer_chat_file_message/flyer_chat_file_message.dart';
 import 'package:flyer_chat_image_message/flyer_chat_image_message.dart';
 import 'package:flyer_chat_system_message/flyer_chat_system_message.dart';
@@ -34,10 +35,12 @@ class LocalState extends State<Local> {
   final _currentUser = const User(
     id: 'me',
     imageSource: 'https://picsum.photos/id/65/200/200',
+    name: 'Jane Doe',
   );
   final _recipient = const User(
     id: 'recipient',
     imageSource: 'https://picsum.photos/id/265/200/200',
+    name: 'John Doe',
   );
   final _systemUser = const User(id: 'system');
 
@@ -68,120 +71,175 @@ class LocalState extends State<Local> {
             );
           },
           customMessageBuilder:
-              (context, message, index) => Container(
+              (
+                context,
+                message,
+                index, {
+                required bool isSentByMe,
+                MessageGroupStatus? groupStatus,
+              }) => Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color:
-                      theme.brightness == Brightness.dark
-                          ? ChatColors.dark().surfaceContainer
-                          : ChatColors.light().surfaceContainer,
+                  color: theme.brightness == Brightness.dark
+                      ? ChatColors.dark().surfaceContainer
+                      : ChatColors.light().surfaceContainer,
                   borderRadius: const BorderRadius.all(Radius.circular(12)),
                 ),
                 child: IsTypingIndicator(),
               ),
           imageMessageBuilder:
-              (context, message, index) =>
-                  FlyerChatImageMessage(message: message, index: index),
+              (
+                context,
+                message,
+                index, {
+                required bool isSentByMe,
+                MessageGroupStatus? groupStatus,
+              }) => FlyerChatImageMessage(message: message, index: index),
           systemMessageBuilder:
-              (context, message, index) =>
-                  FlyerChatSystemMessage(message: message, index: index),
-          composerBuilder:
-              (context) => Composer(
-                topWidget: ComposerActionBar(
-                  buttons: [
-                    ComposerActionButton(
-                      icon: Icons.type_specimen,
-                      title: 'Toggle typing',
-                      onPressed: () => _toggleTyping(),
-                    ),
-                    ComposerActionButton(
-                      icon: Icons.shuffle,
-                      title: 'Send random',
-                      onPressed: () => _addItem(null),
-                    ),
-                    ComposerActionButton(
-                      icon: Icons.delete_sweep,
-                      title: 'Clear all',
-                      onPressed: () => _chatController.setMessages([]),
-                      destructive: true,
-                    ),
-                  ],
+              (
+                context,
+                message,
+                index, {
+                required bool isSentByMe,
+                MessageGroupStatus? groupStatus,
+              }) => FlyerChatSystemMessage(message: message, index: index),
+          composerBuilder: (context) => Composer(
+            topWidget: ComposerActionBar(
+              buttons: [
+                ComposerActionButton(
+                  icon: Icons.type_specimen,
+                  title: 'Toggle typing',
+                  onPressed: () => _toggleTyping(),
                 ),
-              ),
-          textMessageBuilder:
-              (context, message, index) =>
-                  FlyerChatTextMessage(message: message, index: index),
-          fileMessageBuilder:
-              (context, message, index) =>
-                  FlyerChatFileMessage(message: message, index: index),
-          chatMessageBuilder: (
-            context,
-            message,
-            index,
-            animation,
-            child, {
-            bool? isRemoved,
-            MessageGroupStatus? groupStatus,
-          }) {
-            final isSystemMessage = message.authorId == 'system';
-            final isLastInGroup = groupStatus?.isLast ?? true;
-            final shouldShowAvatar =
-                !isSystemMessage && isLastInGroup && isRemoved != true;
-            final isCurrentUser = message.authorId == _currentUser.id;
-
-            Widget? avatar;
-            if (shouldShowAvatar) {
-              avatar = Padding(
-                padding: EdgeInsets.only(
-                  left: isCurrentUser ? 8 : 0,
-                  right: isCurrentUser ? 0 : 8,
+                ComposerActionButton(
+                  icon: Icons.shuffle,
+                  title: 'Send random',
+                  onPressed: () => _addItem(null),
                 ),
-                child: Avatar(userId: message.authorId),
-              );
-            } else if (!isSystemMessage) {
-              avatar = const SizedBox(width: 40);
-            }
-
-            return ChatMessage(
-              message: message,
-              index: index,
-              animation: animation,
-              groupStatus: groupStatus,
-              leadingWidget:
-                  !isCurrentUser
-                      ? avatar
-                      : isSystemMessage
-                      ? null
-                      : const SizedBox(width: 40),
-              trailingWidget:
-                  isCurrentUser
-                      ? avatar
-                      : isSystemMessage
-                      ? null
-                      : const SizedBox(width: 40),
-              receivedMessageScaleAnimationAlignment:
-                  (message is SystemMessage)
-                      ? Alignment.center
-                      : Alignment.centerLeft,
-              receivedMessageAlignment:
-                  (message is SystemMessage)
-                      ? AlignmentDirectional.center
-                      : AlignmentDirectional.centerStart,
-              horizontalPadding: (message is SystemMessage) ? 0 : 8,
-              child: child,
+                ComposerActionButton(
+                  icon: Icons.delete_sweep,
+                  title: 'Clear all',
+                  onPressed: () => _chatController.setMessages([]),
+                  destructive: true,
+                ),
+              ],
+            ),
+          ),
+          linkPreviewBuilder: (context, message, isSentByMe) {
+            // It's up to you to (optionally) implement the logic to avoid every
+            // message to refetch the preview data
+            //
+            // For example, you can use a metadata to indicate if the preview
+            // was already fetched (or null).
+            //
+            // Additionally, you can cache the data to avoid re-fetching across app restarts.
+            return LinkPreview(
+              text: message.text,
+              linkPreviewData: message.linkPreviewData,
+              onLinkPreviewDataFetched: (linkPreviewData) {
+                _chatController.updateMessage(
+                  message,
+                  message.copyWith(linkPreviewData: linkPreviewData),
+                );
+              },
             );
           },
+          textMessageBuilder:
+              (
+                context,
+                message,
+                index, {
+                required bool isSentByMe,
+                MessageGroupStatus? groupStatus,
+              }) => FlyerChatTextMessage(message: message, index: index),
+          fileMessageBuilder:
+              (
+                context,
+                message,
+                index, {
+                required bool isSentByMe,
+                MessageGroupStatus? groupStatus,
+              }) => FlyerChatFileMessage(message: message, index: index),
+          chatMessageBuilder:
+              (
+                context,
+                message,
+                index,
+                animation,
+                child, {
+                bool? isRemoved,
+                required bool isSentByMe,
+                MessageGroupStatus? groupStatus,
+              }) {
+                final isSystemMessage = message.authorId == 'system';
+                final isFirstInGroup = groupStatus?.isFirst ?? true;
+                final isLastInGroup = groupStatus?.isLast ?? true;
+                final shouldShowAvatar =
+                    !isSystemMessage && isLastInGroup && isRemoved != true;
+                final isCurrentUser = message.authorId == _currentUser.id;
+                final shouldShowUsername =
+                    !isSystemMessage && isFirstInGroup && isRemoved != true;
+
+                Widget? avatar;
+                if (shouldShowAvatar) {
+                  avatar = Padding(
+                    padding: EdgeInsets.only(
+                      left: isCurrentUser ? 8 : 0,
+                      right: isCurrentUser ? 0 : 8,
+                    ),
+                    child: Avatar(userId: message.authorId),
+                  );
+                } else if (!isSystemMessage) {
+                  avatar = const SizedBox(width: 40);
+                }
+
+                return ChatMessage(
+                  message: message,
+                  index: index,
+                  animation: animation,
+                  isRemoved: isRemoved,
+                  groupStatus: groupStatus,
+                  topWidget: shouldShowUsername
+                      ? Padding(
+                          padding: EdgeInsets.only(
+                            bottom: 4,
+                            left: isCurrentUser ? 0 : 48,
+                            right: isCurrentUser ? 48 : 0,
+                          ),
+                          child: Username(userId: message.authorId),
+                        )
+                      : null,
+                  leadingWidget: !isCurrentUser
+                      ? avatar
+                      : isSystemMessage
+                      ? null
+                      : const SizedBox(width: 40),
+                  trailingWidget: isCurrentUser
+                      ? avatar
+                      : isSystemMessage
+                      ? null
+                      : const SizedBox(width: 40),
+                  receivedMessageScaleAnimationAlignment:
+                      (message is SystemMessage)
+                      ? Alignment.center
+                      : Alignment.centerLeft,
+                  receivedMessageAlignment: (message is SystemMessage)
+                      ? AlignmentDirectional.center
+                      : AlignmentDirectional.centerStart,
+                  horizontalPadding: (message is SystemMessage) ? 0 : 8,
+                  child: child,
+                );
+              },
         ),
         chatController: _chatController,
         currentUserId: _currentUser.id,
         decoration: BoxDecoration(
-          color:
-              theme.brightness == Brightness.dark
-                  ? ChatColors.dark().surface
-                  : ChatColors.light().surface,
+          color: theme.brightness == Brightness.dark
+              ? ChatColors.dark().surface
+              : ChatColors.light().surface,
           image: DecorationImage(
             image: AssetImage('assets/pattern.png'),
             repeat: ImageRepeat.repeat,
@@ -196,22 +254,21 @@ class LocalState extends State<Local> {
         onAttachmentTap: _handleAttachmentTap,
         onMessageLongPress: _handleMessageLongPress,
         onMessageSend: _addItem,
-        resolveUser:
-            (id) => Future.value(switch (id) {
-              'me' => _currentUser,
-              'recipient' => _recipient,
-              'system' => _systemUser,
-              _ => null,
-            }),
-        theme:
-            theme.brightness == Brightness.dark
-                ? ChatTheme.dark()
-                : ChatTheme.light(),
+        resolveUser: (id) => Future.value(switch (id) {
+          'me' => _currentUser,
+          'recipient' => _recipient,
+          'system' => _systemUser,
+          _ => null,
+        }),
+        theme: theme.brightness == Brightness.dark
+            ? ChatTheme.dark()
+            : ChatTheme.light(),
       ),
     );
   }
 
   void _handleMessageLongPress(
+    BuildContext context,
     Message message, {
     int? index,
     LongPressStartDetails? details,
@@ -383,10 +440,9 @@ class LocalState extends State<Local> {
                       source: filePath,
                       name: fileName,
                       size: fileSize,
-                      mimeType:
-                          file.extension != null
-                              ? 'application/${file.extension}'
-                              : null,
+                      mimeType: file.extension != null
+                          ? 'application/${file.extension}'
+                          : null,
                     );
 
                     await _chatController.insertMessage(fileMessage);

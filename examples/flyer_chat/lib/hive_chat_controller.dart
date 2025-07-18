@@ -9,12 +9,16 @@ class HiveChatController
   final _box = Hive.box('chat');
   final _operationsController = StreamController<ChatOperation>.broadcast();
 
+  // Cache for performance - invalidated when data changes
+  List<Message>? _cachedMessages;
+
   @override
   Future<void> insertMessage(Message message, {int? index}) async {
     if (_box.containsKey(message.id)) return;
 
     // Index is ignored because Hive does not maintain order
     await _box.put(message.id, message.toJson());
+    _invalidateCache();
     _operationsController.add(ChatOperation.insert(message, _box.length - 1));
   }
 
@@ -26,6 +30,7 @@ class HiveChatController
     if (index != -1) {
       final messageToRemove = sortedMessages[index];
       await _box.delete(messageToRemove.id);
+      _invalidateCache();
       _operationsController.add(ChatOperation.remove(messageToRemove, index));
     }
   }
@@ -43,6 +48,7 @@ class HiveChatController
       }
 
       await _box.put(actualOldMessage.id, newMessage.toJson());
+      _invalidateCache();
       _operationsController.add(
         ChatOperation.update(actualOldMessage, newMessage, index),
       );
@@ -53,7 +59,8 @@ class HiveChatController
   Future<void> setMessages(List<Message> messages) async {
     await _box.clear();
     if (messages.isEmpty) {
-      _operationsController.add(ChatOperation.set());
+      _invalidateCache();
+      _operationsController.add(ChatOperation.set([]));
       return;
     } else {
       await _box.putAll(
@@ -62,7 +69,8 @@ class HiveChatController
             .toList()
             .reduce((acc, map) => {...acc, ...map}),
       );
-      _operationsController.add(ChatOperation.set(messages: messages));
+      _invalidateCache();
+      _operationsController.add(ChatOperation.set(messages));
     }
   }
 
@@ -78,18 +86,33 @@ class HiveChatController
           .toList()
           .reduce((acc, map) => {...acc, ...map}),
     );
+    _invalidateCache();
     _operationsController.add(
       ChatOperation.insertAll(messages, originalLength),
     );
   }
 
+  /// Invalidates the cached messages list
+  void _invalidateCache() {
+    _cachedMessages = null;
+  }
+
   @override
-  List<Message> get messages =>
-      _box.values.map((json) => Message.fromJson(json)).toList()..sort(
-        (a, b) => (a.createdAt?.millisecondsSinceEpoch ?? 0).compareTo(
-          b.createdAt?.millisecondsSinceEpoch ?? 0,
-        ),
-      );
+  List<Message> get messages {
+    if (_cachedMessages != null) {
+      return _cachedMessages!;
+    }
+
+    _cachedMessages =
+        _box.values.map((json) => Message.fromJson(_convertMap(json))).toList()
+          ..sort(
+            (a, b) => (a.createdAt?.millisecondsSinceEpoch ?? 0).compareTo(
+              b.createdAt?.millisecondsSinceEpoch ?? 0,
+            ),
+          );
+
+    return _cachedMessages!;
+  }
 
   @override
   Stream<ChatOperation> get operationsStream => _operationsController.stream;
@@ -100,4 +123,34 @@ class HiveChatController
     disposeUploadProgress();
     disposeScrollMethods();
   }
+}
+
+/// Recursively converts a map with dynamic keys and values to a map with String keys.
+/// It's optimized to avoid creating new maps if no conversion is needed.
+Map<String, dynamic> _convertMap(dynamic map) {
+  if (map is Map<String, dynamic>) {
+    Map<String, dynamic>? newMap;
+    for (final entry in map.entries) {
+      final value = entry.value;
+      if (value is Map) {
+        final convertedValue = _convertMap(value);
+        if (convertedValue != value) {
+          newMap ??= Map<String, dynamic>.of(map);
+          newMap[entry.key] = convertedValue;
+        }
+      }
+    }
+    return newMap ?? map;
+  }
+
+  final convertedMap = Map<String, dynamic>.from(map as Map);
+
+  for (final key in convertedMap.keys) {
+    final value = convertedMap[key];
+    if (value is Map) {
+      convertedMap[key] = _convertMap(value);
+    }
+  }
+
+  return convertedMap;
 }

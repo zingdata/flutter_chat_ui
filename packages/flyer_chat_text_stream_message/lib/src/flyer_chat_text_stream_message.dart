@@ -2,9 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 
 import 'stream_state.dart';
 import 'text_segment.dart';
+
+/// Theme values for [FlyerChatTextStreamMessage].
+typedef _LocalTheme =
+    ({
+      TextStyle bodyMedium,
+      TextStyle labelSmall,
+      Color onPrimary,
+      Color onSurface,
+      Color primary,
+      BorderRadiusGeometry shape,
+      Color surfaceContainer,
+    });
 
 /// Defines how the text stream message content is rendered.
 enum TextStreamMessageMode {
@@ -76,6 +89,26 @@ class FlyerChatTextStreamMessage extends StatefulWidget {
   /// The rendering mode for the text content.
   final TextStreamMessageMode mode;
 
+  /// The callback function to handle link clicks.
+  final void Function(String url, String title)? onLinkTap;
+
+  /// The text to display while in the loading state. Defaults to "Thinking".
+  final String loadingText;
+
+  /// The base color for the shimmer loading animation.
+  final Color? shimmerBaseColor;
+
+  /// The highlight color for the shimmer loading animation.
+  final Color? shimmerHighlightColor;
+
+  /// The period of the shimmer loading animation.
+  final Duration shimmerPeriod;
+
+  /// A builder to completely override the default loading widget.
+  /// If provided, `loadingText`, `shimmerBaseColor`, and `shimmerHighlightColor` are ignored.
+  final Widget Function(BuildContext context, TextStyle? paragraphStyle)?
+  loadingBuilder;
+
   /// Creates a widget to display a streaming text message.
   const FlyerChatTextStreamMessage({
     super.key,
@@ -94,6 +127,12 @@ class FlyerChatTextStreamMessage extends StatefulWidget {
     this.timeAndStatusPosition = TimeAndStatusPosition.end,
     this.chunkAnimationDuration = const Duration(milliseconds: 350),
     this.mode = TextStreamMessageMode.animatedOpacity,
+    this.onLinkTap,
+    this.loadingText = 'Thinking',
+    this.shimmerBaseColor,
+    this.shimmerHighlightColor,
+    this.shimmerPeriod = const Duration(milliseconds: 1000),
+    this.loadingBuilder,
   });
 
   @override
@@ -255,8 +294,18 @@ class _FlyerChatTextStreamMessageState extends State<FlyerChatTextStreamMessage>
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.watch<ChatTheme>();
-    final isSentByMe = context.watch<UserID>() == widget.message.authorId;
+    final theme = context.select(
+      (ChatTheme t) => (
+        bodyMedium: t.typography.bodyMedium,
+        labelSmall: t.typography.labelSmall,
+        onPrimary: t.colors.onPrimary,
+        onSurface: t.colors.onSurface,
+        primary: t.colors.primary,
+        shape: t.shape,
+        surfaceContainer: t.colors.surfaceContainer,
+      ),
+    );
+    final isSentByMe = context.read<UserID>() == widget.message.authorId;
     final backgroundColor = _resolveBackgroundColor(isSentByMe, theme);
     final paragraphStyle = _resolveParagraphStyle(isSentByMe, theme);
     final timeStyle = _resolveTimeStyle(isSentByMe, theme);
@@ -264,8 +313,8 @@ class _FlyerChatTextStreamMessageState extends State<FlyerChatTextStreamMessage>
     final timeAndStatus =
         widget.showTime || (isSentByMe && widget.showStatus)
             ? TimeAndStatus(
-              time: widget.message.time,
-              status: widget.message.status,
+              time: widget.message.resolvedTime,
+              status: widget.message.resolvedStatus,
               showTime: widget.showTime,
               showStatus: isSentByMe && widget.showStatus,
               textStyle: timeStyle,
@@ -291,15 +340,20 @@ class _FlyerChatTextStreamMessageState extends State<FlyerChatTextStreamMessage>
     );
   }
 
-  Widget _buildTextContent(TextStyle? paragraphStyle, ChatTheme theme) {
+  Widget _buildTextContent(TextStyle? paragraphStyle, _LocalTheme theme) {
     if (widget.streamState is StreamStateLoading) {
-      return SizedBox(
-        width: paragraphStyle?.lineHeight,
-        height: paragraphStyle?.lineHeight,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: paragraphStyle?.color,
-        ),
+      if (widget.loadingBuilder != null) {
+        return widget.loadingBuilder!(context, paragraphStyle);
+      }
+
+      return Shimmer.fromColors(
+        baseColor:
+            widget.shimmerBaseColor ?? theme.onSurface.withValues(alpha: 0.3),
+        highlightColor:
+            widget.shimmerHighlightColor ??
+            theme.onSurface.withValues(alpha: 0.8),
+        period: widget.shimmerPeriod,
+        child: Text(widget.loadingText, style: paragraphStyle),
       );
     }
 
@@ -317,7 +371,11 @@ class _FlyerChatTextStreamMessageState extends State<FlyerChatTextStreamMessage>
 
     if (widget.streamState is StreamStateCompleted) {
       final state = widget.streamState as StreamStateCompleted;
-      return GptMarkdown(state.finalText, style: paragraphStyle);
+      return GptMarkdown(
+        state.finalText,
+        style: paragraphStyle,
+        onLinkTap: widget.onLinkTap,
+      );
     }
 
     // Build RichText from segments for Streaming state
@@ -410,29 +468,29 @@ class _FlyerChatTextStreamMessageState extends State<FlyerChatTextStreamMessage>
     }
   }
 
-  Color? _resolveBackgroundColor(bool isSentByMe, ChatTheme theme) {
+  Color? _resolveBackgroundColor(bool isSentByMe, _LocalTheme theme) {
     if (isSentByMe) {
-      return widget.sentBackgroundColor ?? theme.colors.primary;
+      return widget.sentBackgroundColor ?? theme.primary;
     }
-    return widget.receivedBackgroundColor ?? theme.colors.surfaceContainer;
+    return widget.receivedBackgroundColor ?? theme.surfaceContainer;
   }
 
-  TextStyle? _resolveParagraphStyle(bool isSentByMe, ChatTheme theme) {
+  TextStyle? _resolveParagraphStyle(bool isSentByMe, _LocalTheme theme) {
     if (isSentByMe) {
       return widget.sentTextStyle ??
-          theme.typography.bodyMedium.copyWith(color: theme.colors.onPrimary);
+          theme.bodyMedium.copyWith(color: theme.onPrimary);
     }
     return widget.receivedTextStyle ??
-        theme.typography.bodyMedium.copyWith(color: theme.colors.onSurface);
+        theme.bodyMedium.copyWith(color: theme.onSurface);
   }
 
-  TextStyle? _resolveTimeStyle(bool isSentByMe, ChatTheme theme) {
+  TextStyle? _resolveTimeStyle(bool isSentByMe, _LocalTheme theme) {
     if (isSentByMe) {
       return widget.timeStyle ??
-          theme.typography.labelSmall.copyWith(color: theme.colors.onPrimary);
+          theme.labelSmall.copyWith(color: theme.onPrimary);
     }
     return widget.timeStyle ??
-        theme.typography.labelSmall.copyWith(color: theme.colors.onSurface);
+        theme.labelSmall.copyWith(color: theme.onSurface);
   }
 }
 

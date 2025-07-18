@@ -1,3 +1,39 @@
+## 2.4.0
+
+ - **FEAT**: link preview package ([#790](https://github.com/flyerhq/flutter_chat_ui/issues/790)). ([2938f646](https://github.com/flyerhq/flutter_chat_ui/commit/2938f646f3167fb9ab65ca769f2326801db45c52))
+
+## 2.3.3
+
+ - **FIX**: add onLinkTap for StreamMessages ([#831](https://github.com/flyerhq/flutter_chat_ui/issues/831)). ([c92d7e22](https://github.com/flyerhq/flutter_chat_ui/commit/c92d7e22ac82204f93d6c35fe20d954de53077c5))
+ - **FIX**: allow set linksColor ([#830](https://github.com/flyerhq/flutter_chat_ui/issues/830)). ([a4044125](https://github.com/flyerhq/flutter_chat_ui/commit/a40441256914149b28174cc784ca190be4c03e19))
+
+## 2.3.2
+
+ - **FIX**: update dependencies. ([a8ff8b57](https://github.com/flyerhq/flutter_chat_ui/commit/a8ff8b573a25146d5c78b1014c9caa3126d1de40))
+
+## 2.3.1
+
+ - Update a dependency to the latest release.
+
+## 2.3.0
+
+ - **FIX**: introduce status field back ([#809](https://github.com/flyerhq/flutter_chat_ui/issues/809)). ([1aadf874](https://github.com/flyerhq/flutter_chat_ui/commit/1aadf8747d81672422a0e40363b0c2aeaa9e3efd))
+ - **FIX**: update documentation. ([2ec05db2](https://github.com/flyerhq/flutter_chat_ui/commit/2ec05db24f3fb469658a3fd3a27a7c3c739826e9))
+ - **FIX**: perf improvements ([#807](https://github.com/flyerhq/flutter_chat_ui/issues/807)). ([71e6d690](https://github.com/flyerhq/flutter_chat_ui/commit/71e6d69027d520c351b00c5e85e30cd97dabd321))
+ - **FEAT**: time and status grouping same minute fix [#764](https://github.com/flyerhq/flutter_chat_ui/issues/764) ([#792](https://github.com/flyerhq/flutter_chat_ui/issues/792)). ([61c04002](https://github.com/flyerhq/flutter_chat_ui/commit/61c04002153897113f47c239e059511b1e3468ec))
+
+## 2.2.2
+
+ - Update a dependency to the latest release.
+
+## 2.2.1
+
+ - Update a dependency to the latest release.
+
+## 2.2.0
+
+ - **FEAT**: link preview v2 ([#784](https://github.com/flyerhq/flutter_chat_ui/issues/784)). ([b65060e1](https://github.com/flyerhq/flutter_chat_ui/commit/b65060e11036402934489976c702dab28c7feb80))
+
 ## 2.1.5
 
  - Update a dependency to the latest release.

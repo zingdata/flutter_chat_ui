@@ -103,6 +103,9 @@ class ChatAnimatedList extends StatefulWidget {
   /// A value of 0.2 means pagination will trigger when scrolled to 20% from the top.
   final double? paginationThreshold;
 
+  /// The mode to use for grouping messages.
+  final MessagesGroupingMode? messagesGroupingMode;
+
   /// Timeout in seconds for grouping consecutive messages from the same author.
   final int? messageGroupingTimeoutInSeconds;
 
@@ -154,6 +157,7 @@ class ChatAnimatedList extends StatefulWidget {
     // Modify this value at your own risk. If you increase it and experience
     // unstable pagination jumps, revert to a smaller value like 0.01.
     this.paginationThreshold = 0.01,
+    this.messagesGroupingMode,
     this.messageGroupingTimeoutInSeconds,
     this.physics,
   });
@@ -177,9 +181,6 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
   // Queue of operations to be processed
   final List<ChatOperation> _operationsQueue = [];
   bool _isProcessingOperations = false;
-
-  // Used by scrollview_observer to allow for scroll to specific item
-  BuildContext? _sliverListViewContext;
 
   late final AnimationController _scrollAnimationController;
   late final AnimationController _scrollToBottomController;
@@ -351,7 +352,6 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
         int index,
         Animation<double> animation,
       ) {
-        _sliverListViewContext ??= context;
         final message = _oldList[visualPosition(index)];
 
         return widget.itemBuilder(
@@ -359,6 +359,7 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
           message,
           visualPosition(index),
           animation,
+          messagesGroupingMode: widget.messagesGroupingMode,
           messageGroupingTimeoutInSeconds:
               widget.messageGroupingTimeoutInSeconds,
         );
@@ -431,10 +432,13 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
         children: [
           SliverViewObserver(
             controller: _observerController,
-            sliverContexts:
-                () => [
-                  if (_sliverListViewContext != null) _sliverListViewContext!,
-                ],
+            sliverContexts: () {
+              // Using the key's context ensures we always have the latest, valid
+              // context for the SliverAnimatedList, or null if it's not built.
+              // This is safer than storing a BuildContext.
+              final context = _listKey.currentContext;
+              return [if (context != null) context];
+            },
             child: CustomScrollView(
               controller: _scrollController,
               reverse: widget.reversed,
@@ -699,7 +703,8 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
           },
         );
       } else {
-        if (_scrollToBottomController.status == AnimationStatus.completed) {
+        if (_scrollToBottomController.status == AnimationStatus.completed ||
+            _scrollToBottomController.status == AnimationStatus.forward) {
           _scrollToBottomController.reverse();
         }
       }
@@ -749,23 +754,27 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
       // --- Scroll Anchoring Setup: Only for non-reversed lists ---
       if (!widget.reversed) {
         try {
-          final notificationResult = await _observerController
-              .dispatchOnceObserve(
-                sliverContext: _sliverListViewContext!,
-                isForce: true,
-                isDependObserveCallback: false,
-              );
-          final firstItem =
-              notificationResult
-                  .observeResult
-                  ?.innerDisplayingChildModelList
-                  .firstOrNull;
-          final anchorIndex = firstItem?.index;
+          // We can only anchor the scroll position if the list is actually
+          // in the widget tree and has a context.
+          if (_listKey.currentContext != null) {
+            final notificationResult = await _observerController
+                .dispatchOnceObserve(
+                  sliverContext: _listKey.currentContext!,
+                  isForce: true,
+                  isDependObserveCallback: false,
+                );
+            final firstItem =
+                notificationResult
+                    .observeResult
+                    ?.innerDisplayingChildModelList
+                    .firstOrNull;
+            final anchorIndex = firstItem?.index;
 
-          if (anchorIndex != null &&
-              anchorIndex >= 0 &&
-              anchorIndex < _oldList.length) {
-            anchorMessageId = _oldList[anchorIndex].id;
+            if (anchorIndex != null &&
+                anchorIndex >= 0 &&
+                anchorIndex < _oldList.length) {
+              anchorMessageId = _oldList[anchorIndex].id;
+            }
           }
         } catch (e) {
           debugPrint('Error observing scroll position for anchoring: $e');
@@ -853,17 +862,10 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
       return;
     }
 
-    if (_sliverListViewContext == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (!_scrollController.hasClients || !mounted) return;
-        return _scrollToIndex(
-          index,
-          duration: duration,
-          curve: curve,
-          alignment: alignment,
-          offset: offset,
-        );
-      });
+    // If the context is null, it means the list is not
+    // in the tree, and there's nothing to scroll to.
+    if (_listKey.currentContext == null) {
+      return;
     }
 
     final visualIndex = visualPosition(index);
@@ -1016,6 +1018,7 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
         data, // Pass the actual message data being removed.
         position, // Pass its original position.
         animation,
+        messagesGroupingMode: widget.messagesGroupingMode,
         messageGroupingTimeoutInSeconds: widget.messageGroupingTimeoutInSeconds,
         isRemoved: true,
       ),

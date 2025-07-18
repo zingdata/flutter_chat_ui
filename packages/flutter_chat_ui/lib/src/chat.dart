@@ -31,6 +31,12 @@ class Chat extends StatefulWidget {
   /// If not provided, a default instance is created.
   final CrossCache? crossCache;
 
+  /// Optional user-provided cache for resolved `User` objects.
+  /// Ideally, you would not provide this and rely on the default internal LRU cache.
+  /// However, you can supply your own instance if you need direct control to clear
+  /// the cache for a specific user (e.g., when an avatar URL changes and requires a refresh).
+  final UserCache? userCache;
+
   /// The visual theme for the chat UI.
   /// If not provided, defaults to [ChatTheme.light].
   final ChatTheme? theme;
@@ -76,6 +82,7 @@ class Chat extends StatefulWidget {
     required this.chatController,
     this.builders,
     this.crossCache,
+    this.userCache,
     this.theme,
     this.onMessageSend,
     this.onMessageTap,
@@ -96,6 +103,7 @@ class _ChatState extends State<Chat> with WidgetsBindingObserver {
   late ChatTheme _theme;
   late Builders _builders;
   late final CrossCache _crossCache;
+  late final UserCache _userCache;
   late DateFormat _timeFormat;
 
   @override
@@ -105,6 +113,7 @@ class _ChatState extends State<Chat> with WidgetsBindingObserver {
     _updateTheme();
     _updateBuilders();
     _crossCache = widget.crossCache ?? CrossCache();
+    _userCache = widget.userCache ?? UserCache(maxSize: 100);
     _timeFormat = widget.timeFormat ?? DateFormat('HH:mm');
   }
 
@@ -143,6 +152,10 @@ class _ChatState extends State<Chat> with WidgetsBindingObserver {
         Provider.value(value: _theme),
         Provider.value(value: _builders),
         Provider.value(value: _crossCache),
+        if (widget.userCache != null)
+          ChangeNotifierProvider.value(value: _userCache)
+        else
+          ChangeNotifierProvider(create: (_) => _userCache),
         Provider.value(value: _timeFormat),
         Provider.value(value: widget.onMessageSend),
         Provider.value(value: widget.onMessageTap),
@@ -150,7 +163,6 @@ class _ChatState extends State<Chat> with WidgetsBindingObserver {
         Provider.value(value: widget.onAttachmentTap),
         ChangeNotifierProvider(create: (_) => ComposerHeightNotifier()),
         ChangeNotifierProvider(create: (_) => LoadMoreNotifier()),
-        Provider(create: (_) => UserCache(maxSize: 100)),
       ],
       child: Container(
         color: widget.decoration != null ? null : (widget.backgroundColor ?? _theme.colors.surface),
@@ -175,6 +187,7 @@ class _ChatState extends State<Chat> with WidgetsBindingObserver {
     Message message,
     int index,
     Animation<double> animation, {
+    MessagesGroupingMode? messagesGroupingMode,
     int? messageGroupingTimeoutInSeconds,
     bool? isRemoved,
   }) {
@@ -183,6 +196,7 @@ class _ChatState extends State<Chat> with WidgetsBindingObserver {
       message: message,
       index: index,
       animation: animation,
+      messagesGroupingMode: messagesGroupingMode,
       messageGroupingTimeoutInSeconds: messageGroupingTimeoutInSeconds,
       isRemoved: isRemoved,
     );

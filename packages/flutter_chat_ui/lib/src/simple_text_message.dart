@@ -2,6 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:provider/provider.dart';
 
+/// Theme values for [SimpleTextMessage].
+typedef _LocalTheme =
+    ({
+      TextStyle bodyMedium,
+      TextStyle labelSmall,
+      Color onPrimary,
+      Color onSurface,
+      Color primary,
+      BorderRadiusGeometry shape,
+      Color surfaceContainer,
+    });
+
 /// A widget that displays a simple text message.
 class SimpleTextMessage extends StatelessWidget {
   /// The text message data model.
@@ -15,6 +27,9 @@ class SimpleTextMessage extends StatelessWidget {
 
   /// Border radius of the message bubble.
   final BorderRadiusGeometry? borderRadius;
+
+  /// Box constraints for the message bubble.
+  final BoxConstraints? constraints;
 
   /// Font size for messages containing only emojis.
   final double? onlyEmojiFontSize;
@@ -43,6 +58,14 @@ class SimpleTextMessage extends StatelessWidget {
   /// Position of the timestamp and status indicator relative to the text.
   final TimeAndStatusPosition timeAndStatusPosition;
 
+  /// Insets for the timestamp and status indicator when [timeAndStatusPosition] is [TimeAndStatusPosition.inline].
+  final EdgeInsetsGeometry? timeAndStatusPositionInlineInsets;
+
+  /// The position of the link preview widget relative to the text.
+  /// If set to [LinkPreviewPosition.none], the link preview widget will not be displayed.
+  /// A [LinkPreviewBuilder] must be provided for the preview to be displayed.
+  final LinkPreviewPosition linkPreviewPosition;
+
   /// Creates a widget to display a simple text message.
   const SimpleTextMessage({
     super.key,
@@ -50,6 +73,7 @@ class SimpleTextMessage extends StatelessWidget {
     required this.index,
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
     this.borderRadius,
+    this.constraints,
     this.onlyEmojiFontSize = 48,
     this.sentBackgroundColor,
     this.receivedBackgroundColor,
@@ -59,14 +83,26 @@ class SimpleTextMessage extends StatelessWidget {
     this.showTime = true,
     this.showStatus = true,
     this.timeAndStatusPosition = TimeAndStatusPosition.end,
+    this.timeAndStatusPositionInlineInsets = const EdgeInsets.only(bottom: 2),
+    this.linkPreviewPosition = LinkPreviewPosition.bottom,
   });
 
   bool get _isOnlyEmoji => message.metadata?['isOnlyEmoji'] == true;
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.watch<ChatTheme>();
-    final isSentByMe = context.watch<UserID>() == message.authorId;
+    final theme = context.select(
+      (ChatTheme t) => (
+        bodyMedium: t.typography.bodyMedium,
+        labelSmall: t.typography.labelSmall,
+        onPrimary: t.colors.onPrimary,
+        onSurface: t.colors.onSurface,
+        primary: t.colors.primary,
+        shape: t.shape,
+        surfaceContainer: t.colors.surfaceContainer,
+      ),
+    );
+    final isSentByMe = context.read<UserID>() == message.authorId;
     final backgroundColor = _resolveBackgroundColor(isSentByMe, theme);
     final textStyle = _resolveTextStyle(isSentByMe, theme);
     final timeStyle = _resolveTimeStyle(isSentByMe, theme);
@@ -74,8 +110,8 @@ class SimpleTextMessage extends StatelessWidget {
     final timeAndStatus =
         showTime || (isSentByMe && showStatus)
             ? TimeAndStatus(
-              time: message.time,
-              status: message.status,
+              time: message.resolvedTime,
+              status: message.resolvedStatus,
               showTime: showTime,
               showStatus: isSentByMe && showStatus,
               textStyle: timeStyle,
@@ -90,26 +126,42 @@ class SimpleTextMessage extends StatelessWidget {
               : textStyle,
     );
 
-    return Container(
-      padding:
-          _isOnlyEmoji
-              ? EdgeInsets.symmetric(
-                horizontal: (padding?.horizontal ?? 0) / 2,
-                vertical: 0,
-              )
-              : padding,
-      decoration:
-          _isOnlyEmoji
-              ? null
-              : BoxDecoration(
-                color: backgroundColor,
-                borderRadius: borderRadius ?? theme.shape,
+    final linkPreviewWidget =
+        linkPreviewPosition != LinkPreviewPosition.none
+            ? context.read<Builders>().linkPreviewBuilder?.call(
+              context,
+              message,
+              isSentByMe,
+            )
+            : null;
+
+    return ClipRRect(
+      borderRadius: borderRadius ?? theme.shape,
+      child: Container(
+        constraints: constraints,
+        decoration: _isOnlyEmoji ? null : BoxDecoration(color: backgroundColor),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding:
+                  _isOnlyEmoji
+                      ? EdgeInsets.symmetric(
+                        horizontal: (padding?.horizontal ?? 0) / 2,
+                        vertical: 0,
+                      )
+                      : padding,
+              child: _buildContentBasedOnPosition(
+                context: context,
+                textContent: textContent,
+                timeAndStatus: timeAndStatus,
+                textStyle: textStyle,
+                linkPreviewWidget: linkPreviewWidget,
               ),
-      child: _buildContentBasedOnPosition(
-        context: context,
-        textContent: textContent,
-        timeAndStatus: timeAndStatus,
-        textStyle: textStyle,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -119,82 +171,83 @@ class SimpleTextMessage extends StatelessWidget {
     required Widget textContent,
     TimeAndStatus? timeAndStatus,
     TextStyle? textStyle,
+    Widget? linkPreviewWidget,
   }) {
-    if (timeAndStatus == null) {
-      return textContent;
-    }
-
     final textDirection = Directionality.of(context);
+    final effectiveLinkPreviewPosition =
+        linkPreviewWidget != null
+            ? linkPreviewPosition
+            : LinkPreviewPosition.none;
 
-    switch (timeAndStatusPosition) {
-      case TimeAndStatusPosition.start:
-        return Column(
+    return Stack(
+      children: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [textContent, timeAndStatus],
-        );
-      case TimeAndStatusPosition.inline:
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Flexible(child: textContent),
-            const SizedBox(width: 4),
-            timeAndStatus,
+            if (effectiveLinkPreviewPosition == LinkPreviewPosition.top)
+              linkPreviewWidget!,
+            timeAndStatusPosition == TimeAndStatusPosition.inline
+                ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Flexible(child: textContent),
+                    SizedBox(width: 4),
+                    Padding(
+                      padding:
+                          timeAndStatusPositionInlineInsets ?? EdgeInsets.zero,
+                      child: timeAndStatus,
+                    ),
+                  ],
+                )
+                : textContent,
+            if (effectiveLinkPreviewPosition == LinkPreviewPosition.bottom)
+              linkPreviewWidget!,
+            if (timeAndStatusPosition != TimeAndStatusPosition.inline)
+              // Ensure the  width is not smaller than the timeAndStatus widget
+              // Ensure the height accounts for it's height
+              Opacity(opacity: 0, child: timeAndStatus),
           ],
-        );
-      case TimeAndStatusPosition.end:
-        return Stack(
-          children: [
-            Padding(
-              padding: EdgeInsets.only(bottom: textStyle?.lineHeight ?? 0),
-              child: textContent,
-            ),
-            Opacity(opacity: 0, child: timeAndStatus),
-            Positioned.directional(
-              textDirection: textDirection,
-              end: 0,
-              bottom: 0,
-              child: timeAndStatus,
-            ),
-          ],
-        );
-    }
+        ),
+        if (timeAndStatusPosition != TimeAndStatusPosition.inline &&
+            timeAndStatus != null)
+          Positioned.directional(
+            textDirection: textDirection,
+            end: timeAndStatusPosition == TimeAndStatusPosition.end ? 0 : null,
+            start:
+                timeAndStatusPosition == TimeAndStatusPosition.start ? 0 : null,
+            bottom: 0,
+            child: timeAndStatus,
+          ),
+      ],
+    );
   }
 
-  Color? _resolveBackgroundColor(bool isSentByMe, ChatTheme theme) {
+  Color? _resolveBackgroundColor(bool isSentByMe, _LocalTheme theme) {
     if (isSentByMe) {
-      return sentBackgroundColor ?? theme.colors.primary;
+      return sentBackgroundColor ?? theme.primary;
     }
-    return receivedBackgroundColor ?? theme.colors.surfaceContainer;
+    return receivedBackgroundColor ?? theme.surfaceContainer;
   }
 
-  TextStyle? _resolveTextStyle(bool isSentByMe, ChatTheme theme) {
+  TextStyle? _resolveTextStyle(bool isSentByMe, _LocalTheme theme) {
     if (isSentByMe) {
-      return sentTextStyle ??
-          theme.typography.bodyMedium.copyWith(color: theme.colors.onPrimary);
+      return sentTextStyle ?? theme.bodyMedium.copyWith(color: theme.onPrimary);
     }
     return receivedTextStyle ??
-        theme.typography.bodyMedium.copyWith(color: theme.colors.onSurface);
+        theme.bodyMedium.copyWith(color: theme.onSurface);
   }
 
-  TextStyle? _resolveTimeStyle(bool isSentByMe, ChatTheme theme) {
+  TextStyle? _resolveTimeStyle(bool isSentByMe, _LocalTheme theme) {
     if (isSentByMe) {
       return timeStyle ??
-          theme.typography.labelSmall.copyWith(
-            color:
-                _isOnlyEmoji ? theme.colors.onSurface : theme.colors.onPrimary,
+          theme.labelSmall.copyWith(
+            color: _isOnlyEmoji ? theme.onSurface : theme.onPrimary,
           );
     }
-    return timeStyle ??
-        theme.typography.labelSmall.copyWith(color: theme.colors.onSurface);
+    return timeStyle ?? theme.labelSmall.copyWith(color: theme.onSurface);
   }
-}
-
-/// Internal extension for calculating the visual line height of a TextStyle.
-extension on TextStyle {
-  /// Calculates the line height based on the style's `height` and `fontSize`.
-  double get lineHeight => (height ?? 1) * (fontSize ?? 0);
 }
 
 /// A widget to display the message timestamp and status indicator.
