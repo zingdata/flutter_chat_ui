@@ -15,6 +15,39 @@ typedef _LocalTheme =
       Color surfaceContainer,
     });
 
+// This can be removed when this issue is resolved https://github.com/Infinitix-LLC/gpt_markdown/issues/85
+InlineSpan _applyLinkStyle(
+  InlineSpan original,
+  TextStyle? paragraphStyle,
+  Color? color,
+  TextDecoration? decoration,
+  Color? decorationColor,
+) {
+  if (original is TextSpan) {
+    return TextSpan(
+      text: original.text,
+      children:
+          original.children
+              ?.map(
+                (child) => _applyLinkStyle(
+                  child,
+                  paragraphStyle,
+                  color,
+                  decoration,
+                  decorationColor,
+                ),
+              )
+              .toList(),
+      style: (original.style ?? paragraphStyle ?? const TextStyle()).copyWith(
+        color: color,
+        decoration: decoration,
+        decorationColor: decorationColor,
+      ),
+    );
+  }
+  return original;
+}
+
 /// A widget that displays a regular text message.
 ///
 /// Supports markdown rendering via [GptMarkdown].
@@ -55,6 +88,15 @@ class FlyerChatTextMessage extends StatelessWidget {
   /// The color of the links in the received messages.
   final Color? receivedLinksColor;
 
+  /// The color of the links decoration in the sent messages.
+  final Color? sentLinksDecorationColor;
+
+  /// The color of the links decoration in the received messages.
+  final Color? receivedLinksDecorationColor;
+
+  /// The decoration of the links.
+  final TextDecoration? linksDecoration;
+
   /// Text style for the message timestamp and status.
   final TextStyle? timeStyle;
 
@@ -78,6 +120,9 @@ class FlyerChatTextMessage extends StatelessWidget {
   /// A [LinkPreviewBuilder] must be provided for the preview to be displayed.
   final LinkPreviewPosition linkPreviewPosition;
 
+  /// The widget to display on top of the message.
+  final Widget? topWidget;
+
   /// Creates a widget to display a text message.
   const FlyerChatTextMessage({
     super.key,
@@ -93,6 +138,9 @@ class FlyerChatTextMessage extends StatelessWidget {
     this.receivedTextStyle,
     this.sentLinksColor,
     this.receivedLinksColor,
+    this.sentLinksDecorationColor,
+    this.receivedLinksDecorationColor,
+    this.linksDecoration,
     this.timeStyle,
     this.showTime = true,
     this.showStatus = true,
@@ -100,6 +148,7 @@ class FlyerChatTextMessage extends StatelessWidget {
     this.timeAndStatusPositionInlineInsets = const EdgeInsets.only(bottom: 2),
     this.onLinkTap,
     this.linkPreviewPosition = LinkPreviewPosition.bottom,
+    this.topWidget,
   });
 
   bool get _isOnlyEmoji => message.metadata?['isOnlyEmoji'] == true;
@@ -122,6 +171,12 @@ class FlyerChatTextMessage extends StatelessWidget {
     final paragraphStyle = _resolveParagraphStyle(isSentByMe, theme);
     final timeStyle = _resolveTimeStyle(isSentByMe, theme);
 
+    final linksColor = isSentByMe ? sentLinksColor : receivedLinksColor;
+    final linksDecorationColor = _resolveLinksDecorationColor(
+      isSentByMe,
+      theme,
+    );
+
     final timeAndStatus =
         showTime || (isSentByMe && showStatus)
             ? TimeAndStatus(
@@ -134,10 +189,7 @@ class FlyerChatTextMessage extends StatelessWidget {
             : null;
 
     final textContent = GptMarkdownTheme(
-      gptThemeData: GptMarkdownTheme.of(context).copyWith(
-        linkColor: isSentByMe ? sentLinksColor : receivedLinksColor,
-        linkHoverColor: isSentByMe ? sentLinksColor : receivedLinksColor,
-      ),
+      gptThemeData: GptMarkdownTheme.of(context),
       child: GptMarkdown(
         message.text,
         style:
@@ -145,6 +197,16 @@ class FlyerChatTextMessage extends StatelessWidget {
                 ? paragraphStyle?.copyWith(fontSize: onlyEmojiFontSize)
                 : paragraphStyle,
         onLinkTap: onLinkTap,
+        linkBuilder:
+            (_, span, _, _) => Text.rich(
+              _applyLinkStyle(
+                span,
+                paragraphStyle,
+                linksColor,
+                linksDecoration,
+                linksDecorationColor,
+              ),
+            ),
       ),
     );
 
@@ -207,6 +269,7 @@ class FlyerChatTextMessage extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (topWidget != null) topWidget!,
             if (effectiveLinkPreviewPosition == LinkPreviewPosition.top)
               linkPreviewWidget!,
             timeAndStatusPosition == TimeAndStatusPosition.inline
@@ -251,6 +314,15 @@ class FlyerChatTextMessage extends StatelessWidget {
       return sentBackgroundColor ?? theme.primary;
     }
     return receivedBackgroundColor ?? theme.surfaceContainer;
+  }
+
+  Color? _resolveLinksDecorationColor(bool isSentByMe, _LocalTheme theme) {
+    if (isSentByMe) {
+      return sentLinksDecorationColor ?? sentLinksColor ?? theme.onPrimary;
+    }
+    return receivedLinksDecorationColor ??
+        receivedLinksColor ??
+        theme.onSurface;
   }
 
   TextStyle? _resolveParagraphStyle(bool isSentByMe, _LocalTheme theme) {

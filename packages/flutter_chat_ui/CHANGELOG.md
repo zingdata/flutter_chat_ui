@@ -1,3 +1,48 @@
+## 2.9.1
+
+ - **FIX**: add content insertion configuration to Composer widget ([#852](https://github.com/flyerhq/flutter_chat_ui/issues/852)). ([6b5f6afc](https://github.com/flyerhq/flutter_chat_ui/commit/6b5f6afcd55054b79c31d950be63c2a4583f8128))
+
+## 2.9.0
+
+This release introduces two-sided pagination. You can now load newer messages using the new `onStartReached` callback, while `onEndReached` continues to work for older messages. For pagination to work correctly, messages should be inserted instantly, without animation.
+
+To allow this and offer more granular control, a new optional `animated` parameter has been added to all controller operations except `update`. This is not a breaking change, but if you'd like to use it, you can update your controller like so:
+```dart
+insertMessage(Message message, {int? index}) // ❌
+insertMessage(Message message, {int? index, bool animated = true}) // ✅
+ChatOperation.insert(..., animated: animated) // add animated to insert operations
+
+insertAllMessages(List<Message> messages, {int? index}) // ❌
+insertAllMessages(List<Message> messages, {int? index, bool animated = true}) // ✅
+ChatOperation.insertAll(..., animated: animated) // add animated to insertAll operations
+
+removeMessage(Message message) // ❌
+removeMessage(Message message, {bool animated = true}) // ✅
+ChatOperation.remove(..., animated: animated) // add animated to remove operations
+
+setMessages(List<Message> messages) // ❌
+setMessages(List<Message> messages, {bool animated = true}) // ✅
+ChatOperation.set(..., animated: animated) // add animated to set operations
+```
+
+As an optional improvement, you can use this parameter to disable animations when clearing the chat, which is now the default behaviour in the example apps.
+```dart
+ChatOperation.set(messages, animated: messages.isEmpty ? false : animated) // inside the controller
+```
+
+⚠️ There is a small potential breaking change: `LoadMoreNotifier` was updated for two-sided loading. If you used a custom **LoadMore** widget and used `LoadMoreNotifier` to measure its height, that logic has been removed as it was not used. Additionally, the internal property `_isLoading` is now `_isLoadingOlder`, and `_isLoadingNewer` has been added.
+
+ - **FEAT**: implement two-sided pagination ([#840](https://github.com/flyerhq/flutter_chat_ui/issues/840)). ([8cca3141](https://github.com/flyerhq/flutter_chat_ui/commit/8cca314116664216b9f1697fabde0eccfd1c582d))
+
+## 2.8.1
+
+ - **FIX**: composer inputClearMode and fix custom editing controller. ([b4872190](https://github.com/flyerhq/flutter_chat_ui/commit/b4872190e92c5eae27dbd7c2bfa352f12085b527))
+
+## 2.8.0
+
+ - **FIX**: update LICENSE. ([209a1292](https://github.com/flyerhq/flutter_chat_ui/commit/209a129297ebe7fd202e41273c9c0ddd52b8b983))
+ - **FEAT**: allow for top widgets within the bubble ([#814](https://github.com/flyerhq/flutter_chat_ui/issues/814)). ([e267c27c](https://github.com/flyerhq/flutter_chat_ui/commit/e267c27ca2ac8541e4f7c4ba05ee38cecaa1f9b6))
+
 ## 2.7.0
 
  - **FEAT**: link preview package ([#790](https://github.com/flyerhq/flutter_chat_ui/issues/790)). ([2938f646](https://github.com/flyerhq/flutter_chat_ui/commit/2938f646f3167fb9ab65ca769f2326801db45c52))

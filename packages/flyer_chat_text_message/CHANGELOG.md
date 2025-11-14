@@ -1,3 +1,17 @@
+## 2.5.2
+
+ - **FIX**: add support for linksDecoration, sentLinksDecorationColor, receivedLinksDecorationColor. ([b5b9e906](https://github.com/flyerhq/flutter_chat_ui/commit/b5b9e906fc94fc0b22b72a12eb3d71860e301323))
+ - **FIX**: link color ([#858](https://github.com/flyerhq/flutter_chat_ui/issues/858)). ([bb9f814d](https://github.com/flyerhq/flutter_chat_ui/commit/bb9f814d8d7f6a0ff03b4788f892eec23c4bbb88))
+
+## 2.5.1
+
+ - Update a dependency to the latest release.
+
+## 2.5.0
+
+ - **FIX**: update LICENSE. ([209a1292](https://github.com/flyerhq/flutter_chat_ui/commit/209a129297ebe7fd202e41273c9c0ddd52b8b983))
+ - **FEAT**: allow for top widgets within the bubble ([#814](https://github.com/flyerhq/flutter_chat_ui/issues/814)). ([e267c27c](https://github.com/flyerhq/flutter_chat_ui/commit/e267c27ca2ac8541e4f7c4ba05ee38cecaa1f9b6))
+
 ## 2.4.0
 
  - **FEAT**: link preview package ([#790](https://github.com/flyerhq/flutter_chat_ui/issues/790)). ([2938f646](https://github.com/flyerhq/flutter_chat_ui/commit/2938f646f3167fb9ab65ca769f2326801db45c52))
